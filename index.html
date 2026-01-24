@@ -1269,9 +1269,9 @@
                         </div>
                         <div class="slider-group">
                             <div class="slider-label">
-                                <span class="slider-value" id="mstrLeverageValue">1.8x</span>
+                                <span class="slider-value" id="mstrLeverageValue">1.2x</span>
                             </div>
-                            <input type="range" id="mstrLeverage" min="1" max="3" step="0.1" value="1.8">
+                            <input type="range" id="mstrLeverage" min="1" max="3" step="0.1" value="1.2">
                         </div>
                         <div class="price-timestamp" style="margin-top: 0.5rem;">Bitcoin exposure multiplier</div>
                     </div>
@@ -1303,7 +1303,7 @@
                                 <div class="help-tooltip">
                                     <div class="help-tooltip-title">STRC Dividend Yield</div>
                                     <div class="help-tooltip-text">
-                                        The annual dividend yield for Strategy (STRC), a Bitcoin treasury company. This is a fixed annual return percentage, separate from Bitcoin price appreciation.
+                                        The annual dividend yield for STRC preferred shares. Preferred shares pay fixed dividends (like bonds) but trade like stocks. Note: STRC returns are automatically capped at 50% of Bitcoin's return each year to maintain realistic assumptions.
                                     </div>
                                 </div>
                             </span>
@@ -1322,7 +1322,7 @@
                                 <div class="help-tooltip">
                                     <div class="help-tooltip-title">SATA Dividend Yield</div>
                                     <div class="help-tooltip-text">
-                                        The annual dividend yield for Strive (SATA), a Bitcoin treasury company. This is a fixed annual return percentage.
+                                        The annual dividend yield for SATA preferred shares. Preferred shares pay fixed dividends (like bonds) but trade like stocks. Note: SATA returns are automatically capped at 50% of Bitcoin's return each year to maintain realistic assumptions.
                                     </div>
                                 </div>
                             </span>
@@ -1415,13 +1415,15 @@
                         <div class="help-tooltip" style="min-width: 300px; max-width: 400px;">
                             <div class="help-tooltip-title">Withdrawal Strategy</div>
                             <div class="help-tooltip-text">
-                                When you retire, funds are withdrawn in this tax-optimized order:<br><br>
-                                <strong>1.</strong> STRC/SATA dividends (current year's yield)<br>
+                                When you retire, funds are withdrawn in this tax-optimized order (within each account):<br><br>
+                                <strong>1.</strong> STRC/SATA dividends (lower-return preferred first)<br>
                                 <strong>2.</strong> Cash<br>
                                 <strong>3.</strong> Stocks<br>
-                                <strong>4.</strong> STRC/SATA principal<br>
-                                <strong>5.</strong> MSTR/Bitcoin/₿ ETF<br><br>
-                                This maximizes Bitcoin growth while using dividend income first. Before age 59.5, only taxable/self-custody accounts are used to avoid penalties.
+                                <strong>4.</strong> STRC/SATA principal (lower-return preferred first)<br>
+                                <strong>5.</strong> FBTC (Bitcoin ETF)<br>
+                                <strong>6.</strong> MSTR (leveraged Bitcoin)<br>
+                                <strong>7.</strong> Bitcoin (preserved longest)<br><br>
+                                This maximizes Bitcoin growth while using lower-growth assets first. Before age 59.5, only taxable/self-custody accounts are used to avoid penalties.
                             </div>
                         </div>
                     </span>
@@ -1454,6 +1456,16 @@
                 </div>
                 
                 <div id="allocationChart" class="chart-container hidden" style="height: auto; min-height: 500px; padding-bottom: 2rem;">
+                    <!-- Portfolio Total Display -->
+                    <div style="text-align: center; margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px; border: 2px solid var(--bitcoin-orange);">
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                            Total Portfolio Value
+                        </div>
+                        <div id="allocationTotalValue" style="font-size: 2.5rem; font-weight: 700; color: var(--bitcoin-orange); font-family: 'Courier New', monospace;">
+                            $0
+                        </div>
+                    </div>
+                    
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                         <div style="position: relative; height: 360px;">
                             <h3 style="text-align: center; margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.95rem;">By Account</h3>
@@ -1469,27 +1481,22 @@
                         </div>
                     </div>
                     
-                    <!-- Year Selector -->
+                    <!-- Age Selector -->
                     <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                             <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">
-                                VIEW ALLOCATION AT YEAR:
+                                VIEW ALLOCATION AT AGE:
                             </label>
-                            <span id="allocationYearDisplay" style="font-weight: 600; color: var(--bitcoin-orange); font-size: 1rem;">
+                            <span id="allocationAgeDisplay" style="font-weight: 600; color: var(--bitcoin-orange); font-size: 1rem;">
                                 0 (Current)
                             </span>
                         </div>
-                        <input type="range" id="allocationYearSlider" min="0" max="50" value="0" step="1" 
+                        <input type="range" id="allocationAgeSlider" min="0" max="50" value="0" step="1" 
                                style="width: 100%; height: 8px; border-radius: 4px; background: var(--bg-tertiary); 
                                       appearance: none; -webkit-appearance: none; cursor: pointer;"
-                               oninput="updateAllocationYear(parseInt(this.value))">
-                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-tertiary);">
-                            <span>Year 0</span>
-                            <span>Year 10</span>
-                            <span>Year 20</span>
-                            <span>Year 30</span>
-                            <span>Year 40</span>
-                            <span>Year 50</span>
+                               oninput="updateAllocationAge(parseInt(this.value))">
+                        <div id="allocationAgeTicks" style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-tertiary);">
+                            <!-- Populated by JS based on current age -->
                         </div>
                     </div>
                 </div>
@@ -1736,6 +1743,41 @@
                 </div>
             </div>
             
+            <!-- Employer Match (401k only) -->
+            <div id="employerMatchSection" class="form-grid mb-2" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">
+                        Employer Match Rate (%)
+                        <span class="help-icon">
+                            ⓘ
+                            <div class="help-tooltip">
+                                <div class="help-tooltip-title">Employer Match Rate</div>
+                                <div class="help-tooltip-text">
+                                    The percentage your employer contributes for every dollar you contribute. Example: 50% means employer adds $0.50 for every $1.00 you contribute (up to the match limit).
+                                </div>
+                            </div>
+                        </span>
+                    </label>
+                    <input type="number" class="form-input" id="employerMatchRate" value="50" min="0" max="200" step="5">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        Match Limit (% of Salary)
+                        <span class="help-icon">
+                            ⓘ
+                            <div class="help-tooltip">
+                                <div class="help-tooltip-title">Match Limit</div>
+                                <div class="help-tooltip-text">
+                                    The maximum percentage of your contribution that receives employer matching. Example: 6% means employer matches contributions up to 6% of your total contribution.
+                                </div>
+                            </div>
+                        </span>
+                    </label>
+                    <input type="number" class="form-input" id="employerMatchLimit" value="6" min="0" max="100" step="1">
+                </div>
+            </div>
+            
             <div class="form-group mb-2">
                 <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
                     <input type="checkbox" id="stopContributionsAtRetirement" checked style="width: auto; margin: 0;">
@@ -1905,11 +1947,13 @@
             renderAccounts();
             updateAllInputs();
             initCharts();
+            updateAllocationSlider(); // Initialize allocation age slider and display
             calculate();
             
             // Event listeners for inputs
             document.getElementById('currentAge').addEventListener('input', (e) => {
                 state.personalInfo.currentAge = parseInt(e.target.value);
+                updateAllocationSlider(); // Update slider when age changes
                 calculate();
             });
             
@@ -1920,6 +1964,7 @@
             
             document.getElementById('lifeExpectancy').addEventListener('input', (e) => {
                 state.personalInfo.lifeExpectancy = parseInt(e.target.value);
+                updateAllocationSlider(); // Update slider when life expectancy changes
                 calculate();
             });
             
@@ -1987,9 +2032,12 @@
             document.getElementById('accountType').addEventListener('change', (e) => {
                 const isBTC = e.target.value === 'selfCustodyBTC';
                 const isHSA = e.target.value === 'hsa';
+                const is401k = e.target.value === 'traditional401k' || e.target.value === 'roth401k';
+                
                 document.getElementById('btcAmountGroup').style.display = isBTC ? 'block' : 'none';
                 document.getElementById('accountBalance').parentElement.style.display = isBTC ? 'none' : 'block';
                 document.getElementById('hsaWithdrawalOption').style.display = isHSA ? 'block' : 'none';
+                document.getElementById('employerMatchSection').style.display = is401k ? 'grid' : 'none';
                 
                 // For self-custody Bitcoin, set BTC to 100% and disable other sliders
                 if (isBTC) {
@@ -2231,9 +2279,15 @@
                     } else if (asset === 'fbtc') {
                         assetReturn = Math.max(0, avgBtcReturn - state.assetPrices.fbtc.expenseRatio / 100);
                     } else if (asset === 'strc') {
-                        assetReturn = state.assetPrices.strc.dividendYield / 100;
+                        // STRC capped at 50% of Bitcoin's return
+                        const maxStrcReturn = avgBtcReturn * 0.5;
+                        const configuredReturn = state.assetPrices.strc.dividendYield / 100;
+                        assetReturn = Math.min(configuredReturn, maxStrcReturn);
                     } else if (asset === 'sata') {
-                        assetReturn = state.assetPrices.sata.dividendYield / 100;
+                        // SATA capped at 50% of Bitcoin's return
+                        const maxSataReturn = avgBtcReturn * 0.5;
+                        const configuredReturn = state.assetPrices.sata.dividendYield / 100;
+                        assetReturn = Math.min(configuredReturn, maxSataReturn);
                     } else if (asset === 'stocks') {
                         assetReturn = state.genericStocksCagr / 100;
                     } else if (asset === 'cash') {
@@ -2385,7 +2439,18 @@
                         if (account.depleted) return;
                         
                         if (year > 0 && year <= account.contributionYears && account.annualContribution > 0) {
-                            const contribution = account.annualContribution;
+                            let contribution = account.annualContribution;
+                            
+                            // Add employer match for 401k accounts
+                            if (account.type === 'traditional401k' || account.type === 'roth401k') {
+                                const matchRate = (account.employerMatchRate || 0) / 100;
+                                const matchLimit = (account.employerMatchLimit || 0) / 100;
+                                // Employer matches up to matchLimit % of contribution at matchRate %
+                                // Example: 50% match on first 6% means match min(6%, contribution%) * 50%
+                                const matchableAmount = contribution * matchLimit;
+                                const employerMatch = matchableAmount * matchRate;
+                                contribution += employerMatch;
+                            }
                             
                             if (account.type === 'selfCustodyBTC') {
                                 // For BTC accounts, just add the contribution to the USD value
@@ -2430,9 +2495,17 @@
                                         const btcCagr = getBitcoinCAGRForYear(Math.floor(year - increment));
                                         annualGrowthRate = btcCagr - (state.assetPrices.fbtc.expenseRatio / 100);
                                     } else if (asset === 'strc') {
-                                        annualGrowthRate = state.assetPrices.strc.dividendYield / 100;
+                                        // STRC capped at 50% of Bitcoin's return
+                                        const btcCagr = getBitcoinCAGRForYear(Math.floor(year - increment));
+                                        const maxStrcReturn = btcCagr * 0.5;
+                                        const configuredReturn = state.assetPrices.strc.dividendYield / 100;
+                                        annualGrowthRate = Math.min(configuredReturn, maxStrcReturn);
                                     } else if (asset === 'sata') {
-                                        annualGrowthRate = state.assetPrices.sata.dividendYield / 100;
+                                        // SATA capped at 50% of Bitcoin's return
+                                        const btcCagr = getBitcoinCAGRForYear(Math.floor(year - increment));
+                                        const maxSataReturn = btcCagr * 0.5;
+                                        const configuredReturn = state.assetPrices.sata.dividendYield / 100;
+                                        annualGrowthRate = Math.min(configuredReturn, maxSataReturn);
                                     } else if (asset === 'stocks') {
                                         annualGrowthRate = state.genericStocksCagr / 100;
                                     } else if (asset === 'cash') {
@@ -2576,27 +2649,43 @@
                         if (actualGrossWithdrawal > 0) {
                             // Smart withdrawal order within account
                             // Strategy: Withdraw lowest-growth assets first to preserve highest-growth longest
-                            // Order: Dividends → Cash → Stocks → STRC/SATA → FBTC → MSTR → Bitcoin
+                            // Order: Dividends → Cash → Stocks → STRC/SATA (lower return first) → FBTC → MSTR → Bitcoin
                             
                             let remainingToWithdrawFromAccount = actualGrossWithdrawal;
                             let cashWithdrawn = 0;  // Track cash separately
                             
+                            // Calculate current year's Bitcoin return for capping STRC/SATA
+                            const currentBtcReturn = getBitcoinCAGRForYear(Math.floor(year));
+                            
+                            // Calculate actual STRC/SATA returns (capped at 50% of Bitcoin)
+                            const strcConfiguredReturn = state.assetPrices.strc.dividendYield / 100;
+                            const sataConfiguredReturn = state.assetPrices.sata.dividendYield / 100;
+                            const maxPreferredReturn = currentBtcReturn * 0.5;
+                            const strcActualReturn = Math.min(strcConfiguredReturn, maxPreferredReturn);
+                            const sataActualReturn = Math.min(sataConfiguredReturn, maxPreferredReturn);
+                            
                             // Calculate available dividends for STRC/SATA (this year's yield only)
-                            const strcDividends = (account.currentHoldings.strc || 0) * 0.11;
-                            const sataDividends = (account.currentHoldings.sata || 0) * 0.1225;
+                            const strcDividends = (account.currentHoldings.strc || 0) * strcActualReturn;
+                            const sataDividends = (account.currentHoldings.sata || 0) * sataActualReturn;
+                            
+                            // Determine which preferred (STRC or SATA) has lower return - withdraw that first
+                            const preferredsByReturn = [
+                                { asset: 'strc', return: strcActualReturn, dividends: strcDividends, principal: Math.max(0, (account.currentHoldings.strc || 0) - strcDividends) },
+                                { asset: 'sata', return: sataActualReturn, dividends: sataDividends, principal: Math.max(0, (account.currentHoldings.sata || 0) - sataDividends) }
+                            ].sort((a, b) => a.return - b.return); // Lower return first
                             
                             // Define withdrawal order with priorities (lower = withdrawn first)
                             const assetWithdrawalOrder = [
-                                // 1-2. STRC/SATA dividends (withdraw dividends first - they're generated this year anyway)
-                                { asset: 'strc', available: strcDividends, priority: 1, name: 'STRC dividends' },
-                                { asset: 'sata', available: sataDividends, priority: 2, name: 'SATA dividends' },
+                                // 1-2. STRC/SATA dividends (withdraw lower-return dividends first)
+                                { asset: preferredsByReturn[0].asset, available: preferredsByReturn[0].dividends, priority: 1, name: `${preferredsByReturn[0].asset.toUpperCase()} dividends` },
+                                { asset: preferredsByReturn[1].asset, available: preferredsByReturn[1].dividends, priority: 2, name: `${preferredsByReturn[1].asset.toUpperCase()} dividends` },
                                 // 3. Cash (lowest growth ~5%)
                                 { asset: 'cash', available: account.currentHoldings.cash || 0, priority: 3, name: 'Cash' },
                                 // 4. Stocks (medium growth ~10%)
                                 { asset: 'stocks', available: account.currentHoldings.stocks || 0, priority: 4, name: 'Stocks' },
-                                // 5-6. STRC/SATA principal (dividend producers ~11-12%)
-                                { asset: 'strc', available: Math.max(0, (account.currentHoldings.strc || 0) - strcDividends), priority: 5, name: 'STRC principal' },
-                                { asset: 'sata', available: Math.max(0, (account.currentHoldings.sata || 0) - sataDividends), priority: 6, name: 'SATA principal' },
+                                // 5-6. STRC/SATA principal (withdraw lower-return principal first)
+                                { asset: preferredsByReturn[0].asset, available: preferredsByReturn[0].principal, priority: 5, name: `${preferredsByReturn[0].asset.toUpperCase()} principal` },
+                                { asset: preferredsByReturn[1].asset, available: preferredsByReturn[1].principal, priority: 6, name: `${preferredsByReturn[1].asset.toUpperCase()} principal` },
                                 // 7. FBTC (Bitcoin ETF ~25%)
                                 { asset: 'fbtc', available: account.currentHoldings.fbtc || 0, priority: 7, name: 'FBTC' },
                                 // 8. MSTR (leveraged Bitcoin ~40%+) - PRESERVED LONGER THAN STOCKS
@@ -2721,7 +2810,16 @@
                 
                 // Add contribution
                 if (shouldContribute) {
-                    const contribution = account.annualContribution;
+                    let contribution = account.annualContribution;
+                    
+                    // Add employer match for 401k accounts
+                    if (account.type === 'traditional401k' || account.type === 'roth401k') {
+                        const matchRate = (account.employerMatchRate || 0) / 100;
+                        const matchLimit = (account.employerMatchLimit || 0) / 100;
+                        const matchableAmount = contribution * matchLimit;
+                        const employerMatch = matchableAmount * matchRate;
+                        contribution += employerMatch;
+                    }
                     
                     if (account.type === 'selfCustodyBTC') {
                         // For BTC accounts, contribution might be in BTC or USD
@@ -3051,20 +3149,21 @@
                     const { top, bottom, left, right } = chartArea;
                     const { x, y } = scales;
                     
-                    const yearsToRetirement = Math.max(0, state.personalInfo.retirementAge - state.personalInfo.currentAge);
-                    const yearsTo59_5 = Math.max(0, 59.5 - state.personalInfo.currentAge);
-                    const yearsToLifeExpectancy = Math.max(0, state.personalInfo.lifeExpectancy - state.personalInfo.currentAge);
+                    const currentAge = state.personalInfo.currentAge;
+                    const retirementAge = state.personalInfo.retirementAge;
+                    const age59_5 = 59.5;
+                    const lifeExpectancy = state.personalInfo.lifeExpectancy;
                     
                     ctx.save();
                     
                     // Draw gap shortfall overlay (if there's a shortfall)
                     if (state.gapShortfallInfo && state.gapShortfallInfo.hasShortfall) {
-                        const shortfallStartYear = state.gapShortfallInfo.depletionYear;
-                        const shortfallEndYear = yearsTo59_5;
+                        const shortfallStartAge = state.gapShortfallInfo.depletionAge;
+                        const shortfallEndAge = age59_5;
                         
-                        if (shortfallStartYear < shortfallEndYear && x.max >= shortfallStartYear) {
-                            const xStart = Math.max(x.getPixelForValue(shortfallStartYear), left);
-                            const xEnd = Math.min(x.getPixelForValue(shortfallEndYear), right);
+                        if (shortfallStartAge < shortfallEndAge && x.max >= shortfallStartAge) {
+                            const xStart = Math.max(x.getPixelForValue(shortfallStartAge), left);
+                            const xEnd = Math.min(x.getPixelForValue(shortfallEndAge), right);
                             
                             // Draw semi-transparent red overlay
                             ctx.fillStyle = 'rgba(239, 68, 68, 0.15)'; // Red with 15% opacity
@@ -3088,8 +3187,8 @@
                     ctx.setLineDash([]);
                     
                     // Draw early retirement line (if different from 59.5)
-                    if (yearsToRetirement > 0 && yearsToRetirement < yearsTo59_5 && x.max >= yearsToRetirement) {
-                        const xPos = x.getPixelForValue(yearsToRetirement);
+                    if (currentAge < retirementAge && retirementAge < age59_5 && x.max >= retirementAge) {
+                        const xPos = x.getPixelForValue(retirementAge);
                         
                         ctx.strokeStyle = '#7c3aed'; // Purple for early retirement
                         ctx.lineWidth = 2;
@@ -3103,12 +3202,12 @@
                         ctx.fillStyle = '#7c3aed';
                         ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
-                        ctx.fillText('Age ' + state.personalInfo.retirementAge, xPos, top - 5);
+                        ctx.fillText('Retirement (Age ' + retirementAge + ')', xPos, top - 5);
                     }
                     
                     // Draw 59.5 line (when retirement accounts accessible)
-                    if (yearsTo59_5 > 0 && x.max >= yearsTo59_5) {
-                        const xPos = x.getPixelForValue(yearsTo59_5); // Don't round - use exact 10.5 position
+                    if (currentAge < age59_5 && x.max >= age59_5) {
+                        const xPos = x.getPixelForValue(age59_5);
                         
                         ctx.strokeStyle = '#f59e0b';
                         ctx.lineWidth = 3;
@@ -3126,8 +3225,8 @@
                     }
                     
                     // Draw life expectancy line
-                    if (yearsToLifeExpectancy > 0 && x.max >= yearsToLifeExpectancy) {
-                        const xPos = x.getPixelForValue(yearsToLifeExpectancy);
+                    if (currentAge < lifeExpectancy && x.max >= lifeExpectancy) {
+                        const xPos = x.getPixelForValue(lifeExpectancy);
                         
                         ctx.strokeStyle = '#ef4444'; // Red for life expectancy
                         ctx.lineWidth = 2;
@@ -3168,10 +3267,28 @@
                             mode: 'index',
                             intersect: false,
                             callbacks: {
+                                title: function(context) {
+                                    // Show age in title
+                                    const age = context[0].parsed.x;
+                                    return 'Age ' + age;
+                                },
                                 label: function(context) {
                                     return context.dataset.label + ': $' + formatNumber(context.parsed.y);
+                                },
+                                footer: function(tooltipItems) {
+                                    // Calculate total portfolio value at this point
+                                    let total = 0;
+                                    tooltipItems.forEach(item => {
+                                        total += item.parsed.y;
+                                    });
+                                    return '\n━━━━━━━━━━━━━━━━━━━━\nTOTAL PORTFOLIO: $' + formatNumber(total);
                                 }
-                            }
+                            },
+                            footerFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            footerColor: '#f7931a' // Bitcoin orange
                         }
                     },
                     scales: {
@@ -3180,7 +3297,7 @@
                             display: true,
                             title: {
                                 display: true,
-                                text: 'Years from Now'
+                                text: 'Age'
                             },
                             ticks: {
                                 stepSize: 1,
@@ -3278,13 +3395,13 @@
                             type: 'linear',
                             title: {
                                 display: true,
-                                text: 'Years from Now'
+                                text: 'Age'
                             },
                             stacked: true,
                             ticks: {
                                 stepSize: 1,
                                 callback: function(value, index, ticks) {
-                                    // Only show whole number years
+                                    // Only show whole number ages
                                     if (value % 1 === 0) {
                                         return value;
                                     }
@@ -3336,8 +3453,17 @@
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return `${label}: $${formatNumber(value)} (${percentage}%)`;
+                                },
+                                footer: function(tooltipItems) {
+                                    const total = tooltipItems[0].dataset.data.reduce((a, b) => a + b, 0);
+                                    return '\n━━━━━━━━━━━━━━━━━━━━\nTOTAL: $' + formatNumber(total);
                                 }
-                            }
+                            },
+                            footerFont: {
+                                size: 13,
+                                weight: 'bold'
+                            },
+                            footerColor: '#f7931a'
                         }
                     }
                 }
@@ -3370,8 +3496,17 @@
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                     return `${label}: $${formatNumber(value)} (${percentage}%)`;
+                                },
+                                footer: function(tooltipItems) {
+                                    const total = tooltipItems[0].dataset.data.reduce((a, b) => a + b, 0);
+                                    return '\n━━━━━━━━━━━━━━━━━━━━\nTOTAL: $' + formatNumber(total);
                                 }
-                            }
+                            },
+                            footerFont: {
+                                size: 13,
+                                weight: 'bold'
+                            },
+                            footerColor: '#f7931a'
                         }
                     }
                 }
@@ -3433,7 +3568,7 @@
                         return {
                             label: account.name,
                             data: projectionData.map(d => ({
-                                x: d.year,
+                                x: d.age,
                                 y: d.accountValues[accountId] || 0
                             })),
                             borderColor: Object.values(ASSET_COLORS)[index % 7],
@@ -3456,7 +3591,7 @@
                                     assetTotal += holdings[asset] || 0;
                                 });
                                 return {
-                                    x: d.year,
+                                    x: d.age,
                                     y: assetTotal
                                 };
                             }),
@@ -3494,7 +3629,7 @@
                                     }
                                 });
                                 return {
-                                    x: d.year,
+                                    x: d.age,
                                     y: categoryTotal
                                 };
                             }),
@@ -3526,11 +3661,11 @@
                 
                 projectionData.forEach((d, index) => {
                     if (d.spending > 0) {
-                        const wholeYear = Math.floor(d.year);
+                        const wholeAge = Math.floor(d.age);
                         
-                        // Start accumulating for a new year
-                        if (yearAccumulator !== wholeYear) {
-                            // Push previous year's data if exists
+                        // Start accumulating for a new age
+                        if (yearAccumulator !== wholeAge) {
+                            // Push previous age's data if exists
                             if (yearAccumulator !== null && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0)) {
                                 cashData.push({ x: yearAccumulator, y: cashAccum });
                                 taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum });
@@ -3538,8 +3673,8 @@
                                 ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum });
                             }
                             
-                            // Reset for new year
-                            yearAccumulator = wholeYear;
+                            // Reset for new age
+                            yearAccumulator = wholeAge;
                             cashAccum = 0;
                             taxFreeAccum = 0;
                             capitalGainsAccum = 0;
@@ -3583,6 +3718,15 @@
             document.getElementById('overviewChart').classList.toggle('hidden', tab !== 'overview');
             document.getElementById('incomeChart').classList.toggle('hidden', tab !== 'income');
             document.getElementById('allocationChart').classList.toggle('hidden', tab !== 'allocation');
+            
+            // Reset allocation to current year (0) when viewing allocation tab
+            if (tab === 'allocation') {
+                const slider = document.getElementById('allocationAgeSlider');
+                if (slider) {
+                    slider.value = 0;
+                }
+                window.updateAllocationAge(0); // Reset to year 0 and update everything
+            }
         }
         
         // Switch Overview View Mode
@@ -3603,31 +3747,67 @@
             updateCharts();
         }
         
-        // Allocation year update - exposed to window for inline handlers
-        window.updateAllocationYear = function(year) {
+        // Allocation age update - exposed to window for inline handlers
+        window.updateAllocationAge = function(yearOffset) {
             // Recursion guard
-            if (window.updateAllocationYear.isRunning) {
-                console.warn('updateAllocationYear already running, skipping');
+            if (window.updateAllocationAge.isRunning) {
+                console.warn('updateAllocationAge already running, skipping');
                 return;
             }
-            window.updateAllocationYear.isRunning = true;
+            window.updateAllocationAge.isRunning = true;
             
             try {
-                state.allocationYear = year;
+                state.allocationYear = yearOffset; // Store as year offset internally
                 
-                // Update display label
-                const label = year === 0 ? '0 (Current)' : year.toString();
-                document.getElementById('allocationYearDisplay').textContent = label;
+                // Update display label to show age
+                const currentAge = state.personalInfo.currentAge;
+                const displayAge = currentAge + yearOffset;
+                const label = yearOffset === 0 ? `${currentAge} (Current)` : displayAge.toString();
+                document.getElementById('allocationAgeDisplay').textContent = label;
+                
+                // Update slider range and ticks based on current age
+                updateAllocationSlider();
                 
                 // Only regenerate allocation charts (not entire updateCharts which may cause recursion)
                 updateAllocationCharts();
             } catch (error) {
-                console.error('Error updating allocation year:', error);
-                showToast('Error updating allocation year', 'error');
+                console.error('Error updating allocation age:', error);
+                showToast('Error updating allocation age', 'error');
             } finally {
-                window.updateAllocationYear.isRunning = false;
+                window.updateAllocationAge.isRunning = false;
             }
         };
+        
+        // Update allocation slider range and tick marks
+        function updateAllocationSlider() {
+            const currentAge = state.personalInfo.currentAge;
+            const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
+            const maxYears = Math.min(50, lifeExpectancy - currentAge);
+            
+            const slider = document.getElementById('allocationAgeSlider');
+            if (slider) {
+                slider.max = maxYears;
+                
+                // Update tick marks to show ages
+                const ticksContainer = document.getElementById('allocationAgeTicks');
+                if (ticksContainer) {
+                    const ticks = [];
+                    for (let i = 0; i <= maxYears; i += 10) {
+                        ticks.push(`<span>${currentAge + i}</span>`);
+                    }
+                    ticksContainer.innerHTML = ticks.join('');
+                }
+                
+                // Update age display based on current slider value
+                const yearOffset = parseInt(slider.value) || 0;
+                const displayAge = currentAge + yearOffset;
+                const label = yearOffset === 0 ? `${currentAge} (Current)` : displayAge.toString();
+                const ageDisplay = document.getElementById('allocationAgeDisplay');
+                if (ageDisplay) {
+                    ageDisplay.textContent = label;
+                }
+            }
+        }
         
         function updateAllocationCharts() {
             // Recursion guard
@@ -3639,7 +3819,14 @@
             
             try {
                 if (!state.charts.allocation || !state.charts.assetAllocation) return;
-                if (state.accounts.length === 0) return;
+                if (state.accounts.length === 0) {
+                    // Update total display to $0
+                    const totalDisplay = document.getElementById('allocationTotalValue');
+                    if (totalDisplay) {
+                        totalDisplay.textContent = '$0';
+                    }
+                    return;
+                }
                 
                 const yearsToRetirement = Math.max(0, state.personalInfo.retirementAge - state.personalInfo.currentAge);
                 const yearsTo59_5 = Math.max(0, 59.5 - state.personalInfo.currentAge);
@@ -3659,7 +3846,8 @@
                     const allocationData = [];
                     const allocationColors = [];
                     
-                    state.accounts.forEach((account, idx) => {
+                    // Only show enabled accounts
+                    enabledAccounts.forEach((account, idx) => {
                         const value = accountValues[account.id] || 0;
                         if (value > 0) {
                             allocationLabels.push(account.name);
@@ -3672,6 +3860,13 @@
                     state.charts.allocation.data.datasets[0].data = allocationData;
                     state.charts.allocation.data.datasets[0].backgroundColor = allocationColors;
                     state.charts.allocation.update('none');
+                    
+                    // Calculate and display total portfolio value
+                    const totalPortfolioValue = allocationData.reduce((sum, val) => sum + val, 0);
+                    const totalDisplay = document.getElementById('allocationTotalValue');
+                    if (totalDisplay) {
+                        totalDisplay.textContent = '$' + formatNumber(totalPortfolioValue);
+                    }
                     
                     // By Asset Type Chart
                     const assetTotals = {
@@ -3728,6 +3923,9 @@
             document.getElementById('stopContributionsAtRetirement').checked = true;
             document.getElementById('hsaIncludeAfter65').checked = false;
             document.getElementById('hsaWithdrawalOption').style.display = 'none';
+            document.getElementById('employerMatchSection').style.display = 'none';
+            document.getElementById('employerMatchRate').value = '50';
+            document.getElementById('employerMatchLimit').value = '6';
             
             // Reset allocations and ensure all sliders are enabled
             ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
@@ -3764,6 +3962,12 @@
             
             // Show/hide HSA option based on account type
             document.getElementById('hsaWithdrawalOption').style.display = account.type === 'hsa' ? 'block' : 'none';
+            
+            // Show/hide employer match based on account type
+            const is401k = account.type === 'traditional401k' || account.type === 'roth401k';
+            document.getElementById('employerMatchSection').style.display = is401k ? 'grid' : 'none';
+            document.getElementById('employerMatchRate').value = account.employerMatchRate || 50;
+            document.getElementById('employerMatchLimit').value = account.employerMatchLimit || 6;
             
             // Show/hide BTC amount field based on account type
             const isBTC = account.type === 'selfCustodyBTC';
@@ -3873,6 +4077,8 @@
                 contributionYears,
                 stopContributionsAtRetirement: document.getElementById('stopContributionsAtRetirement').checked,
                 hsaIncludeAfter65: document.getElementById('hsaIncludeAfter65').checked,
+                employerMatchRate: parseFloat(document.getElementById('employerMatchRate').value) || 50,
+                employerMatchLimit: parseFloat(document.getElementById('employerMatchLimit').value) || 6,
                 contributionAllocation,
                 currentAllocation,
                 enabled: state.editingAccountId 
@@ -4017,6 +4223,9 @@
                         ${account.annualContribution > 0 ? `
                             <div class="account-details">
                                 + $${formatNumber(account.annualContribution)}/year for ${account.contributionYears} years
+                                ${(account.type === 'traditional401k' || account.type === 'roth401k') && account.employerMatchRate > 0 ? `
+                                    <br><span style="color: var(--bitcoin-orange);">+ ${account.employerMatchRate}% match (up to ${account.employerMatchLimit}%)</span>
+                                ` : ''}
                             </div>
                         ` : ''}
                         
@@ -4171,7 +4380,8 @@
                     state = {
                         ...state,
                         ...loaded,
-                        charts: {} // Always reset charts
+                        charts: {}, // Always reset charts
+                        allocationYear: 0 // Always start at current year
                     };
                     
                     // Ensure cash asset exists (for backwards compatibility)
