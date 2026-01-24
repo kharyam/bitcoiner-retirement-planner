@@ -261,6 +261,19 @@
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            background: var(--bg-tertiary);
+            transition: all 0.3s ease;
+            transform: translateY(0) scale(1);
+        }
+
+        .form-group:hover {
+            border-color: var(--bitcoin-orange);
+            box-shadow: 0 0 25px var(--bitcoin-glow), 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px) scale(1.03);
+            z-index: 10;
         }
 
         .form-label {
@@ -469,12 +482,17 @@
         .btn-secondary {
             background: var(--bg-tertiary);
             color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+            transform: translateY(0) scale(1);
         }
 
         .btn-secondary:hover {
             background: var(--bg-card-hover);
-            border-color: var(--border-hover);
+            border-color: var(--bitcoin-orange);
+            box-shadow: 0 0 25px var(--bitcoin-glow), 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px) scale(1.05);
+            z-index: 10;
         }
 
         .btn-danger {
@@ -563,8 +581,17 @@
             background: var(--bg-tertiary);
             padding: 1rem;
             border-radius: 12px;
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
             overflow: visible;
+            transition: all 0.3s ease;
+            transform: translateY(0) scale(1);
+        }
+
+        .price-item:hover {
+            border-color: var(--bitcoin-orange);
+            box-shadow: 0 0 25px var(--bitcoin-glow), 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px) scale(1.03);
+            z-index: 10;
         }
 
         .price-label {
@@ -649,12 +676,15 @@
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 0; /* Remove margin since grid gap handles spacing */
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            transform: translateY(0) scale(1);
         }
 
         .account-card:hover {
             border-color: var(--bitcoin-orange);
-            box-shadow: 0 0 20px var(--bitcoin-glow);
+            box-shadow: 0 0 25px var(--bitcoin-glow), 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px) scale(1.03);
+            z-index: 10;
         }
 
         .account-header {
@@ -988,6 +1018,12 @@
                 opacity: 1;
                 transform: translateX(0);
             }
+        }
+
+        .toast-hide {
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.3s ease;
         }
 
         .toast-icon {
@@ -1508,7 +1544,7 @@
                 <div id="allocationChart" class="chart-container hidden" style="height: auto; min-height: 500px; padding-bottom: 2rem;">
                     <!-- Portfolio Total Display -->
                     <div style="text-align: center; margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px; border: 2px solid var(--bitcoin-orange);">
-                        <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                        <div id="allocationTotalLabel" style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
                             Total Portfolio Value
                         </div>
                         <div id="allocationTotalValue" style="font-size: 2.5rem; font-weight: 700; color: var(--bitcoin-orange); font-family: 'Courier New', monospace;">
@@ -3824,19 +3860,25 @@
                 return;
             }
             window.updateAllocationAge.isRunning = true;
-            
+
             try {
                 state.allocationYear = yearOffset; // Store as year offset internally
-                
+
                 // Update display label to show age
                 const currentAge = state.personalInfo.currentAge;
                 const displayAge = currentAge + yearOffset;
                 const label = yearOffset === 0 ? `${currentAge} (Current)` : displayAge.toString();
                 document.getElementById('allocationAgeDisplay').textContent = label;
-                
+
+                // Update total portfolio label with age
+                const totalLabel = document.getElementById('allocationTotalLabel');
+                if (totalLabel) {
+                    totalLabel.textContent = `Total Portfolio Value at Age ${displayAge}`;
+                }
+
                 // Update slider range and ticks based on current age
                 updateAllocationSlider();
-                
+
                 // Only regenerate allocation charts (not entire updateCharts which may cause recursion)
                 updateAllocationCharts();
             } catch (error) {
@@ -3852,11 +3894,11 @@
             const currentAge = state.personalInfo.currentAge;
             const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
             const maxYears = Math.min(50, lifeExpectancy - currentAge);
-            
+
             const slider = document.getElementById('allocationAgeSlider');
             if (slider) {
                 slider.max = maxYears;
-                
+
                 // Update tick marks to show ages
                 const ticksContainer = document.getElementById('allocationAgeTicks');
                 if (ticksContainer) {
@@ -3866,7 +3908,7 @@
                     }
                     ticksContainer.innerHTML = ticks.join('');
                 }
-                
+
                 // Update age display based on current slider value
                 const yearOffset = parseInt(slider.value) || 0;
                 const displayAge = currentAge + yearOffset;
@@ -3874,6 +3916,12 @@
                 const ageDisplay = document.getElementById('allocationAgeDisplay');
                 if (ageDisplay) {
                     ageDisplay.textContent = label;
+                }
+
+                // Update total portfolio label with age
+                const totalLabel = document.getElementById('allocationTotalLabel');
+                if (totalLabel) {
+                    totalLabel.textContent = `Total Portfolio Value at Age ${displayAge}`;
                 }
             }
         }
@@ -4324,7 +4372,7 @@
                 <div class="tax-summary-container" style="padding: 1.5rem;">
                     <!-- Total Portfolio Value at top -->
                     <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); border-radius: 12px; border: 2px solid var(--bitcoin-orange); text-align: center;">
-                        <div style="color: var(--text-secondary); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Total Portfolio Value</div>
+                        <div id="summaryTotalLabel" style="color: var(--text-secondary); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Total Portfolio Value at Age ${state.personalInfo.currentAge}</div>
                         <div id="summaryTotalValue" class="animate-value" data-value="${totalPortfolio}" style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--bitcoin-orange);">$${formatNumber(totalPortfolio)}</div>
                     </div>
 
@@ -4580,6 +4628,12 @@
                     ageDisplay.textContent = label;
                 }
 
+                // Update total portfolio label with age
+                const totalLabel = document.getElementById('summaryTotalLabel');
+                if (totalLabel) {
+                    totalLabel.textContent = `Total Portfolio Value at Age ${displayAge}`;
+                }
+
                 // Get projection data for the selected year
                 const enabledAccounts = state.accounts.filter(a => a.enabled !== false);
                 if (enabledAccounts.length === 0) {
@@ -4694,24 +4748,29 @@
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            
+
             const icons = {
                 success: '✅',
                 error: '❌',
                 info: 'ℹ️',
                 warning: '⚠️'
             };
-            
+
             toast.innerHTML = `
                 <span class="toast-icon">${icons[type]}</span>
                 <span>${message}</span>
             `;
-            
+
             document.body.appendChild(toast);
-            
+
+            // Auto-remove after 3 seconds
             setTimeout(() => {
-                toast.style.animation = 'slideInRight 0.3s ease reverse';
-                setTimeout(() => toast.remove(), 300);
+                toast.classList.add('toast-hide');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
             }, 3000);
         }
 
