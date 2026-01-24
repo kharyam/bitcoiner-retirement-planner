@@ -140,12 +140,17 @@
 
         .logo-icon {
             font-size: 2rem;
-            animation: pulse 3s ease-in-out infinite;
+            display: inline-block;
+            animation: bitcoinFloat 6s ease-in-out infinite;
+            transform-origin: center center;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.9; }
+        @keyframes bitcoinFloat {
+            0% { transform: rotate(-3deg) scale(1); }
+            25% { transform: rotate(2deg) scale(1.02); }
+            50% { transform: rotate(-2deg) scale(1.04); }
+            75% { transform: rotate(3deg) scale(1.02); }
+            100% { transform: rotate(-3deg) scale(1); }
         }
 
         .nav-actions {
@@ -849,7 +854,16 @@
             background: var(--bg-tertiary);
             padding: 1.5rem;
             border-radius: 12px;
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+            transform: translateY(0) scale(1);
+        }
+
+        .metric-card:hover {
+            border-color: var(--bitcoin-orange);
+            box-shadow: 0 0 25px var(--bitcoin-glow), 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px) scale(1.03);
+            z-index: 10;
         }
 
         .metric-label {
@@ -1025,6 +1039,64 @@
             transform: translateX(100px);
             transition: all 0.3s ease;
         }
+
+        /* Scroll-triggered animations */
+        .scroll-animate {
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scroll-animate.animate-in {
+            opacity: 1;
+        }
+
+        /* Fade up animation */
+        .scroll-animate.fade-up {
+            transform: translateY(40px);
+        }
+        .scroll-animate.fade-up.animate-in {
+            transform: translateY(0);
+        }
+
+        /* Fade in from left */
+        .scroll-animate.fade-left {
+            transform: translateX(-60px);
+        }
+        .scroll-animate.fade-left.animate-in {
+            transform: translateX(0);
+        }
+
+        /* Fade in from right */
+        .scroll-animate.fade-right {
+            transform: translateX(60px);
+        }
+        .scroll-animate.fade-right.animate-in {
+            transform: translateX(0);
+        }
+
+        /* Scale up animation */
+        .scroll-animate.scale-up {
+            transform: scale(0.8);
+        }
+        .scroll-animate.scale-up.animate-in {
+            transform: scale(1);
+        }
+
+        /* Rotate in animation */
+        .scroll-animate.rotate-in {
+            transform: rotate(-10deg) scale(0.9);
+        }
+        .scroll-animate.rotate-in.animate-in {
+            transform: rotate(0) scale(1);
+        }
+
+        /* Stagger delay classes */
+        .stagger-1 { transition-delay: 0.1s; }
+        .stagger-2 { transition-delay: 0.2s; }
+        .stagger-3 { transition-delay: 0.3s; }
+        .stagger-4 { transition-delay: 0.4s; }
+        .stagger-5 { transition-delay: 0.5s; }
+        .stagger-6 { transition-delay: 0.6s; }
 
         .toast-icon {
             font-size: 1.5rem;
@@ -4595,6 +4667,118 @@
             setupScrollAnimations();
         }
 
+        // Page-wide scroll animations
+        function setupPageScrollAnimations() {
+            const scrollObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+            // Add animation classes to elements and observe them
+            const animateElements = () => {
+                // Cards - fade up with stagger
+                document.querySelectorAll('.card').forEach((card, index) => {
+                    if (!card.classList.contains('scroll-animate')) {
+                        card.classList.add('scroll-animate', 'fade-up');
+                        card.style.transitionDelay = `${index * 0.1}s`;
+                        scrollObserver.observe(card);
+                    }
+                });
+
+                // Price items - staggered fade from alternating sides
+                document.querySelectorAll('.price-item').forEach((item, index) => {
+                    if (!item.classList.contains('scroll-animate')) {
+                        item.classList.add('scroll-animate', index % 2 === 0 ? 'fade-left' : 'fade-right');
+                        item.style.transitionDelay = `${(index % 6) * 0.1}s`;
+                        scrollObserver.observe(item);
+                    }
+                });
+
+                // Form groups - staggered scale up
+                document.querySelectorAll('.form-group').forEach((group, index) => {
+                    if (!group.classList.contains('scroll-animate')) {
+                        group.classList.add('scroll-animate', 'scale-up');
+                        group.style.transitionDelay = `${(index % 6) * 0.08}s`;
+                        scrollObserver.observe(group);
+                    }
+                });
+
+                // Metric cards - rotate in with stagger
+                document.querySelectorAll('.metric-card').forEach((card, index) => {
+                    if (!card.classList.contains('scroll-animate')) {
+                        card.classList.add('scroll-animate', 'rotate-in');
+                        card.style.transitionDelay = `${index * 0.1}s`;
+                        scrollObserver.observe(card);
+                    }
+                });
+
+                // Account cards - fade up
+                document.querySelectorAll('.account-card').forEach((card, index) => {
+                    if (!card.classList.contains('scroll-animate')) {
+                        card.classList.add('scroll-animate', 'fade-up');
+                        card.style.transitionDelay = `${(index % 4) * 0.1}s`;
+                        scrollObserver.observe(card);
+                    }
+                });
+
+                // Tax summary items - scale up with stagger
+                document.querySelectorAll('.tax-summary-item').forEach((item, index) => {
+                    if (!item.classList.contains('scroll-animate')) {
+                        item.classList.add('scroll-animate', 'scale-up');
+                        item.style.transitionDelay = `${index * 0.15}s`;
+                        scrollObserver.observe(item);
+                    }
+                });
+
+                // Chart containers - fade up
+                document.querySelectorAll('.chart-container').forEach((container) => {
+                    if (!container.classList.contains('scroll-animate')) {
+                        container.classList.add('scroll-animate', 'fade-up');
+                        scrollObserver.observe(container);
+                    }
+                });
+            };
+
+            // Initial setup
+            animateElements();
+
+            // Re-run when accounts change (for dynamically added elements)
+            const originalRenderAccounts = window.renderAccounts || renderAccounts;
+            if (typeof renderAccounts === 'function') {
+                const _originalRender = renderAccounts;
+                window.renderAccountsWithAnimation = function() {
+                    _originalRender.apply(this, arguments);
+                    setTimeout(animateElements, 50);
+                };
+            }
+
+            // MutationObserver to catch dynamically added elements
+            const mutationObserver = new MutationObserver((mutations) => {
+                let shouldRerun = false;
+                mutations.forEach(mutation => {
+                    if (mutation.addedNodes.length > 0) {
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeType === 1 && (
+                                node.classList?.contains('account-card') ||
+                                node.classList?.contains('price-item') ||
+                                node.classList?.contains('tax-summary-item')
+                            )) {
+                                shouldRerun = true;
+                            }
+                        });
+                    }
+                });
+                if (shouldRerun) {
+                    setTimeout(animateElements, 50);
+                }
+            });
+
+            mutationObserver.observe(document.body, { childList: true, subtree: true });
+        }
+
         // Color code a value based on percentage of target
         function getStatusColor(value, target) {
             if (target <= 0) return 'status-green';
@@ -4763,14 +4947,24 @@
 
             document.body.appendChild(toast);
 
+            // Force reflow to ensure animation plays
+            toast.offsetHeight;
+
             // Auto-remove after 3 seconds
-            setTimeout(() => {
-                toast.classList.add('toast-hide');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.remove();
+            const hideTimeout = window.setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100px)';
+                toast.style.transition = 'all 0.3s ease';
+
+                const removeTimeout = window.setTimeout(function() {
+                    try {
+                        if (toast && toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    } catch (e) {
+                        console.error('Error removing toast:', e);
                     }
-                }, 300);
+                }, 350);
             }, 3000);
         }
 
@@ -5085,6 +5279,7 @@
             positionTooltips();
             initTooltipPositioning();
             setupScrollAnimations();
+            setupPageScrollAnimations();
         });
     </script>
 </body>
