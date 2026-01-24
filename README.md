@@ -93,6 +93,18 @@ This is where you build your actual portfolio:
 - Use realistic contribution amounts you can actually sustain
 - Front-load higher-return assets in tax-advantaged accounts
 
+### Account Summary by Tax Treatment
+
+See your portfolio broken down by tax category with animated values:
+
+- **Total Portfolio Value** - Displayed prominently at the top
+- **Brokerage (Taxable)** - Standard brokerage and self-custody Bitcoin
+- **Tax-Deferred** - Traditional 401(k)s and IRAs
+- **Tax-Free** - Roth 401(k)s and IRAs
+- **HSA** - Health Savings Accounts (if any)
+
+Use the **age slider** to see projected values at any future age. Values animate smoothly as you scrub through time.
+
 ### Analysis Dashboard
 
 Your retirement plan at a glance:
@@ -206,7 +218,8 @@ When you retire, the planner withdraws funds in this tax-optimized order:
 
 - **Everything is local** - No data is sent to any server
 - **Auto-save** - Your plan saves automatically to browser localStorage
-- **Export/Import** - Use Save/Load buttons to backup your plan
+- **Export/Import to File** - Use 📤 Export to save your portfolio as a pretty-formatted JSON file, and 📥 Import to load from a file. Great for backups or sharing between devices.
+- **Browser Save/Load** - Use 💾 Save to save to browser localStorage, and 📂 Load to restore from localStorage
 - **Privacy first** - Only CoinGecko API is called (for Bitcoin price), no tracking
 
 ---
@@ -308,6 +321,14 @@ The tool uses power law by default, which is more conservative and realistic for
 ---
 
 ## 📈 Version History
+
+**v1.1** - UI Enhancements
+- Export/Import portfolio to/from JSON files (pretty-formatted)
+- Account Summary by Tax Treatment with animated values and age slider
+- Responsive Portfolio Accounts grid (1-4 columns based on screen width)
+- Animated number counting in Retirement Analysis metrics
+- Color-coded Projected/Gap Available values (green/yellow/red based on target)
+- Collapsible Portfolio Accounts panel
 
 **v1.0** - Initial release
 - Bitcoin power law modeling with 7 periods

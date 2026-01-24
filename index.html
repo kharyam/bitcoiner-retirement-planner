@@ -620,10 +620,26 @@
             grid-template-columns: 1fr;
             gap: 1rem;
         }
-        
+
+        #accountsList.has-scroll {
+            overflow-y: auto;
+        }
+
+        @media (min-width: 768px) {
+            #accountsList {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (min-width: 1200px) {
             #accountsList {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 1600px) {
+            #accountsList {
+                grid-template-columns: repeat(4, 1fr);
             }
         }
         
@@ -879,6 +895,37 @@
             }
         }
 
+        /* Animated value styles */
+        .animate-value {
+            transition: transform 0.3s ease;
+        }
+
+        .animate-value.counting {
+            transform: scale(1.05);
+        }
+
+        .tax-summary-item {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .tax-summary-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Color coding for metric values */
+        .metric-value.status-green {
+            color: #10b981 !important;
+        }
+
+        .metric-value.status-yellow {
+            color: #f59e0b !important;
+        }
+
+        .metric-value.status-red {
+            color: #ef4444 !important;
+        }
+
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -1036,8 +1083,11 @@
             </a>
             <div class="nav-actions">
                 <button class="icon-btn" id="refreshPricesBtn" title="Refresh Prices">🔄</button>
-                <button class="icon-btn" id="saveBtn" title="Save Portfolio">💾</button>
-                <button class="icon-btn" id="loadBtn" title="Load Portfolio">📂</button>
+                <button class="icon-btn" id="saveBtn" title="Save to Browser">💾</button>
+                <button class="icon-btn" id="loadBtn" title="Load from Browser">📂</button>
+                <button class="icon-btn" id="exportBtn" title="Export to JSON File">📤</button>
+                <button class="icon-btn" id="importBtn" title="Import from JSON File">📥</button>
+                <input type="file" id="importFileInput" accept=".json" style="display: none;">
                 <button class="icon-btn" id="themeToggle" title="Toggle Theme">🌙</button>
             </div>
         </div>
@@ -1376,17 +1426,17 @@
 
         <!-- Portfolio Accounts -->
         <div class="card" id="portfolioCard">
-            <div class="card-header">
+            <div class="card-header" onclick="toggleCard('portfolioCard')">
                 <div class="card-title">
                     <span class="card-icon">💼</span>
                     Portfolio Accounts
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button class="btn btn-primary" onclick="showAddAccountModal()">+ Add Account</button>
+                    <button class="btn btn-primary" onclick="event.stopPropagation(); showAddAccountModal()">+ Add Account</button>
                     <span class="collapse-icon">▼</span>
                 </div>
             </div>
-            <div class="card-content" id="accountsList" style="max-height: 600px; overflow-y: auto;">
+            <div class="card-content" id="accountsList">
                 <!-- Accounts populated by JS -->
             </div>
         </div>
@@ -2994,17 +3044,28 @@
                 }
             }
             
-            // Update gap number display
-            document.getElementById('gapNumber').textContent = '$' + formatNumber(gapNumber);
+            // Update gap number display with animation
+            const gapNumberEl = document.getElementById('gapNumber');
+            animateValue(gapNumberEl, previousValues.gapNumber, gapNumber, 800, '$');
+            previousValues.gapNumber = gapNumber;
             if (gapYears > 0) {
-                document.getElementById('gapDetails').innerHTML = 
+                document.getElementById('gapDetails').innerHTML =
                     `${gapYears.toFixed(1)} years @ ${(avgGapReturn * 100).toFixed(1)}% avg return`;
             } else {
                 document.getElementById('gapDetails').textContent = 'No gap (retire after 59.5)';
             }
-            
-            // Update gap available display
-            document.getElementById('gapAvailable').textContent = '$' + formatNumber(gapAvailable);
+
+            // Update gap available display with animation and color coding
+            const gapAvailableEl = document.getElementById('gapAvailable');
+            animateValue(gapAvailableEl, previousValues.gapAvailable, gapAvailable, 800, '$');
+            previousValues.gapAvailable = gapAvailable;
+            // Color code based on how close to gap number target
+            gapAvailableEl.classList.remove('status-green', 'status-yellow', 'status-red');
+            if (gapYears > 0) {
+                gapAvailableEl.classList.add(getStatusColor(gapAvailable, gapNumber));
+            } else {
+                gapAvailableEl.classList.add('status-green'); // No gap needed
+            }
             const gapSurplus = gapAvailable - gapNumber; // Define here, outside conditional
             
             // Calculate gap shortfall info for chart overlay
@@ -3092,16 +3153,24 @@
                 statusDetail = `Need $${formatNumber(Math.abs(foreverSurplus))} more at 59.5`;
             }
             
-            // Update UI
-            document.getElementById('foreverNumber').textContent = '$' + formatNumber(foreverNumber);
+            // Update UI with animations
+            const foreverNumberEl = document.getElementById('foreverNumber');
+            animateValue(foreverNumberEl, previousValues.foreverNumber, foreverNumber, 800, '$');
+            previousValues.foreverNumber = foreverNumber;
             const withdrawalRatePercent = (withdrawalRate * 100).toFixed(2);
             const multiplier = (1 / withdrawalRate).toFixed(1);
             const btcAllocPercent = (btcAllocationPercent * 100).toFixed(1);
-            document.getElementById('foreverDetails').innerHTML = 
+            document.getElementById('foreverDetails').innerHTML =
                 `Forever Number (×${multiplier})<br>` +
                 `<span style="font-size: 0.85em; color: var(--text-tertiary);">${withdrawalRatePercent}% withdrawal • BTC: ${btcAllocPercent}% at 59.5</span>`;
-            
-            document.getElementById('projectedValue').textContent = '$' + formatNumber(projectedValueAtRetirement);
+
+            // Update projected value with animation and color coding
+            const projectedValueEl = document.getElementById('projectedValue');
+            animateValue(projectedValueEl, previousValues.projectedValue, projectedValueAtRetirement, 800, '$');
+            previousValues.projectedValue = projectedValueAtRetirement;
+            // Color code based on how close to forever number target
+            projectedValueEl.classList.remove('status-green', 'status-yellow', 'status-red');
+            projectedValueEl.classList.add(getStatusColor(projectedValueAtRetirement, foreverNumber));
             document.getElementById('yearsTo59_5').textContent = yearsTo59_5.toFixed(1);
             
             const statusBadge = document.getElementById('statusBadge');
@@ -4252,32 +4321,56 @@
             }).join('');
             
             const summaryHtml = `
-                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
-                    <div style="font-weight: 600; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">
-                        ACCOUNT SUMMARY
+                <div class="tax-summary-container" style="padding: 1.5rem;">
+                    <!-- Total Portfolio Value at top -->
+                    <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); border-radius: 12px; border: 2px solid var(--bitcoin-orange); text-align: center;">
+                        <div style="color: var(--text-secondary); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Total Portfolio Value</div>
+                        <div id="summaryTotalValue" class="animate-value" data-value="${totalPortfolio}" style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--bitcoin-orange);">$${formatNumber(totalPortfolio)}</div>
                     </div>
-                    <div style="display: grid; gap: 0.5rem;">
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">
-                            <span style="color: var(--text-secondary);">💼 Brokerage (Taxable)</span>
-                            <span style="font-weight: 600; color: var(--text-primary);">$${formatNumber(totalBrokerage)}</span>
+
+                    <!-- Tax treatment breakdown -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                        <div class="tax-summary-item" style="background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); padding: 1.25rem; border-radius: 12px; border-left: 4px solid #3b82f6; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">💼</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Brokerage</div>
+                            <div style="color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.5rem;">Taxable</div>
+                            <div id="summaryBrokerage" class="animate-value" data-value="${totalBrokerage}" style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: #3b82f6;">$${formatNumber(totalBrokerage)}</div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">
-                            <span style="color: var(--text-secondary);">🏦 Tax-Deferred (Traditional)</span>
-                            <span style="font-weight: 600; color: var(--text-primary);">$${formatNumber(totalTaxDeferred)}</span>
+                        <div class="tax-summary-item" style="background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); padding: 1.25rem; border-radius: 12px; border-left: 4px solid #f59e0b; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏦</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Tax-Deferred</div>
+                            <div style="color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.5rem;">Traditional IRA/401k</div>
+                            <div id="summaryTaxDeferred" class="animate-value" data-value="${totalTaxDeferred}" style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: #f59e0b;">$${formatNumber(totalTaxDeferred)}</div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">
-                            <span style="color: var(--text-secondary);">✨ Tax-Free (Roth)</span>
-                            <span style="font-weight: 600; color: var(--text-primary);">$${formatNumber(totalTaxFree)}</span>
+                        <div class="tax-summary-item" style="background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); padding: 1.25rem; border-radius: 12px; border-left: 4px solid #10b981; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✨</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Tax-Free</div>
+                            <div style="color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.5rem;">Roth IRA/401k</div>
+                            <div id="summaryTaxFree" class="animate-value" data-value="${totalTaxFree}" style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: #10b981;">$${formatNumber(totalTaxFree)}</div>
                         </div>
-                        ${totalHSA > 0 ? `
-                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">
-                            <span style="color: var(--text-secondary);">💊 HSA <span style="font-size: 0.75rem; opacity: 0.7;">(medical)</span></span>
-                            <span style="font-weight: 600; color: var(--text-primary);">$${formatNumber(totalHSA)}</span>
+                        <div class="tax-summary-item" id="summaryHSACard" style="background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); padding: 1.25rem; border-radius: 12px; border-left: 4px solid #ec4899; text-align: center; ${totalHSA > 0 ? '' : 'display: none;'}">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">💊</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">HSA</div>
+                            <div style="color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.5rem;">Medical Expenses</div>
+                            <div id="summaryHSA" class="animate-value" data-value="${totalHSA}" style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: #ec4899;">$${formatNumber(totalHSA)}</div>
                         </div>
-                        ` : ''}
-                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0.5rem 0.5rem; border-top: 2px solid var(--border-color); margin-top: 0.25rem;">
-                            <span style="font-weight: 600; color: var(--text-primary);">Total Portfolio</span>
-                            <span style="font-weight: 700; color: var(--bitcoin-orange); font-size: 1.1rem;">$${formatNumber(totalPortfolio)}</span>
+                    </div>
+
+                    <!-- Age Selector -->
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.875rem;">
+                                VIEW AT AGE:
+                            </label>
+                            <span id="summaryAgeDisplay" style="font-weight: 600; color: var(--bitcoin-orange); font-size: 1rem;">
+                                ${state.personalInfo.currentAge} (Current)
+                            </span>
+                        </div>
+                        <input type="range" id="summaryAgeSlider" min="0" max="50" value="0" step="1"
+                               style="width: 100%; height: 8px; border-radius: 4px; background: var(--bg-tertiary);
+                                      appearance: none; -webkit-appearance: none; cursor: pointer;"
+                               oninput="updateSummaryAge(parseInt(this.value))">
+                        <div id="summaryAgeTicks" style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-tertiary);">
                         </div>
                     </div>
                 </div>
@@ -4288,9 +4381,59 @@
             // Render summary in separate container
             const summaryContainer = document.getElementById('accountSummaryContent');
             if (summaryContainer) {
-                summaryContainer.innerHTML = summaryHtml.replace('<div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">', '<div style="padding: 0;">');
+                summaryContainer.innerHTML = summaryHtml;
+                resetSummaryAnimation();
+                updateSummarySlider();
+            }
+
+            // Update accounts list height for dynamic sizing
+            updateAccountsListHeight();
+        }
+
+        // Dynamically size accounts list to show up to 4 rows
+        function updateAccountsListHeight() {
+            const container = document.getElementById('accountsList');
+            if (!container) return;
+
+            const accountCards = container.querySelectorAll('.account-card');
+            const numAccounts = accountCards.length;
+
+            if (numAccounts === 0) {
+                container.style.maxHeight = '';
+                container.classList.remove('has-scroll');
+                return;
+            }
+
+            // Get the number of columns from computed style
+            const computedStyle = window.getComputedStyle(container);
+            const gridCols = computedStyle.gridTemplateColumns.split(' ').length;
+
+            // Calculate rows needed
+            const rowsNeeded = Math.ceil(numAccounts / gridCols);
+            const maxRows = 4;
+
+            if (rowsNeeded <= maxRows) {
+                // No scrolling needed, let it size naturally
+                container.style.maxHeight = '';
+                container.classList.remove('has-scroll');
+            } else {
+                // Need scrolling - calculate height for 4 rows
+                // Get height of first card plus gap
+                const firstCard = accountCards[0];
+                const cardHeight = firstCard.offsetHeight;
+                const gap = parseFloat(computedStyle.gap) || 16;
+
+                // Height for 4 rows: 4 cards + 3 gaps
+                const maxHeight = (cardHeight * maxRows) + (gap * (maxRows - 1)) + 16; // +16 for padding
+                container.style.maxHeight = maxHeight + 'px';
+                container.classList.add('has-scroll');
             }
         }
+
+        // Update on window resize
+        window.addEventListener('resize', () => {
+            updateAccountsListHeight();
+        });
         
         // Global functions for account actions (needed for onclick)
         window.editAccountById = function(id) {
@@ -4333,6 +4476,219 @@
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             }).format(num);
+        }
+
+        // Animated number counting function
+        function animateValue(element, start, end, duration = 1000, prefix = '$') {
+            if (!element) return;
+
+            const startTime = performance.now();
+            const startVal = start || 0;
+            const endVal = end || 0;
+
+            element.classList.add('counting');
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Easing function (ease-out cubic)
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+
+                const currentVal = Math.floor(startVal + (endVal - startVal) * easeOut);
+                element.textContent = prefix + formatNumber(currentVal);
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.classList.remove('counting');
+                    element.textContent = prefix + formatNumber(endVal);
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // Track previous values for animation
+        const previousValues = {
+            foreverNumber: 0,
+            projectedValue: 0,
+            gapNumber: 0,
+            gapAvailable: 0
+        };
+
+        // Scroll-triggered animation for account summary
+        let summaryAnimated = false;
+        function setupScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !summaryAnimated) {
+                        summaryAnimated = true;
+                        const animateElements = entry.target.querySelectorAll('.animate-value');
+                        animateElements.forEach((el, index) => {
+                            const targetValue = parseFloat(el.dataset.value) || 0;
+                            setTimeout(() => {
+                                animateValue(el, 0, targetValue, 1200, '$');
+                            }, index * 150); // Stagger the animations
+                        });
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            const summaryContainer = document.getElementById('accountSummaryContent');
+            if (summaryContainer) {
+                observer.observe(summaryContainer);
+            }
+        }
+
+        // Reset summary animation when accounts change
+        function resetSummaryAnimation() {
+            summaryAnimated = false;
+            setupScrollAnimations();
+        }
+
+        // Color code a value based on percentage of target
+        function getStatusColor(value, target) {
+            if (target <= 0) return 'status-green';
+            const ratio = value / target;
+            if (ratio >= 1) return 'status-green';
+            if (ratio >= 0.7) return 'status-yellow';
+            return 'status-red';
+        }
+
+        // Track previous summary values for animation
+        const previousSummaryValues = {
+            total: 0,
+            brokerage: 0,
+            taxDeferred: 0,
+            taxFree: 0,
+            hsa: 0
+        };
+
+        // Update summary age slider and values
+        window.updateSummaryAge = function(yearOffset) {
+            if (window.updateSummaryAge.isRunning) return;
+            window.updateSummaryAge.isRunning = true;
+
+            try {
+                const currentAge = state.personalInfo.currentAge;
+                const displayAge = currentAge + yearOffset;
+                const label = yearOffset === 0 ? `${currentAge} (Current)` : displayAge.toString();
+
+                const ageDisplay = document.getElementById('summaryAgeDisplay');
+                if (ageDisplay) {
+                    ageDisplay.textContent = label;
+                }
+
+                // Get projection data for the selected year
+                const enabledAccounts = state.accounts.filter(a => a.enabled !== false);
+                if (enabledAccounts.length === 0) {
+                    window.updateSummaryAge.isRunning = false;
+                    return;
+                }
+
+                const yearsTo59_5 = Math.max(0, 59.5 - currentAge);
+                const yearsToProject = Math.round(yearsTo59_5) + 40;
+                const projectionData = projectAccountWithWithdrawals(enabledAccounts, yearsToProject);
+
+                if (projectionData.length === 0) {
+                    window.updateSummaryAge.isRunning = false;
+                    return;
+                }
+
+                // Find data for selected year
+                const yearIndex = Math.min(yearOffset * 2, projectionData.length - 1);
+                const currentData = projectionData[yearIndex];
+                const accountValues = currentData.accountValues;
+
+                // Calculate tax treatment totals
+                let totalBrokerage = 0;
+                let totalTaxDeferred = 0;
+                let totalTaxFree = 0;
+                let totalHSA = 0;
+
+                enabledAccounts.forEach(account => {
+                    const value = accountValues[account.id] || 0;
+                    if (account.type === 'taxable' || account.type === 'selfCustodyBTC') {
+                        totalBrokerage += value;
+                    } else if (account.type === 'traditional401k' || account.type === 'traditionalIRA') {
+                        totalTaxDeferred += value;
+                    } else if (account.type === 'roth401k' || account.type === 'rothIRA') {
+                        totalTaxFree += value;
+                    } else if (account.type === 'hsa') {
+                        totalHSA += value;
+                    }
+                });
+
+                const totalPortfolio = totalBrokerage + totalTaxDeferred + totalTaxFree + totalHSA;
+
+                // Update values with animation
+                const totalEl = document.getElementById('summaryTotalValue');
+                const brokerageEl = document.getElementById('summaryBrokerage');
+                const taxDeferredEl = document.getElementById('summaryTaxDeferred');
+                const taxFreeEl = document.getElementById('summaryTaxFree');
+                const hsaEl = document.getElementById('summaryHSA');
+                const hsaCard = document.getElementById('summaryHSACard');
+
+                if (totalEl) {
+                    animateValue(totalEl, previousSummaryValues.total, totalPortfolio, 600, '$');
+                    previousSummaryValues.total = totalPortfolio;
+                }
+                if (brokerageEl) {
+                    animateValue(brokerageEl, previousSummaryValues.brokerage, totalBrokerage, 600, '$');
+                    previousSummaryValues.brokerage = totalBrokerage;
+                }
+                if (taxDeferredEl) {
+                    animateValue(taxDeferredEl, previousSummaryValues.taxDeferred, totalTaxDeferred, 600, '$');
+                    previousSummaryValues.taxDeferred = totalTaxDeferred;
+                }
+                if (taxFreeEl) {
+                    animateValue(taxFreeEl, previousSummaryValues.taxFree, totalTaxFree, 600, '$');
+                    previousSummaryValues.taxFree = totalTaxFree;
+                }
+                if (hsaEl) {
+                    animateValue(hsaEl, previousSummaryValues.hsa, totalHSA, 600, '$');
+                    previousSummaryValues.hsa = totalHSA;
+                }
+                if (hsaCard) {
+                    hsaCard.style.display = totalHSA > 0 ? '' : 'none';
+                }
+
+            } catch (error) {
+                console.error('Error updating summary age:', error);
+            } finally {
+                window.updateSummaryAge.isRunning = false;
+            }
+        };
+
+        // Update summary slider tick marks
+        function updateSummarySlider() {
+            const currentAge = state.personalInfo.currentAge;
+            const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
+            const maxYears = Math.min(50, lifeExpectancy - currentAge);
+
+            const slider = document.getElementById('summaryAgeSlider');
+            if (slider) {
+                slider.max = maxYears;
+
+                const ticksContainer = document.getElementById('summaryAgeTicks');
+                if (ticksContainer) {
+                    const ticks = [];
+                    for (let i = 0; i <= maxYears; i += 10) {
+                        ticks.push(`<span>${currentAge + i}</span>`);
+                    }
+                    ticksContainer.innerHTML = ticks.join('');
+                }
+
+                // Update age display
+                const yearOffset = parseInt(slider.value) || 0;
+                const displayAge = currentAge + yearOffset;
+                const label = yearOffset === 0 ? `${currentAge} (Current)` : displayAge.toString();
+                const ageDisplay = document.getElementById('summaryAgeDisplay');
+                if (ageDisplay) {
+                    ageDisplay.textContent = label;
+                }
+            }
         }
 
         function showToast(message, type = 'info') {
@@ -4500,7 +4856,121 @@
         });
 
         document.getElementById('refreshPricesBtn').addEventListener('click', fetchBitcoinPrice);
-        
+
+        // Export to JSON file
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            try {
+                // Prepare export data (exclude charts and functions)
+                const exportData = {
+                    portfolioVersion: "1.0",
+                    exportedAt: new Date().toISOString(),
+                    theme: state.theme,
+                    personalInfo: state.personalInfo,
+                    bitcoinModel: {
+                        ...state.bitcoinModel,
+                        powerLawPeriods: state.bitcoinModel.powerLawPeriods.map(p => ({
+                            ...p,
+                            duration: p.duration === Infinity ? "Infinity" : p.duration
+                        }))
+                    },
+                    assetPrices: state.assetPrices,
+                    genericStocksCagr: state.genericStocksCagr,
+                    accounts: state.accounts
+                };
+
+                const jsonString = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                const date = new Date().toISOString().split('T')[0];
+                a.download = `bitcoin-retirement-portfolio-${date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast('Portfolio exported to file!', 'success');
+            } catch (error) {
+                console.error('Export error:', error);
+                showToast('Failed to export portfolio', 'error');
+            }
+        });
+
+        // Import from JSON file
+        document.getElementById('importBtn').addEventListener('click', () => {
+            document.getElementById('importFileInput').click();
+        });
+
+        document.getElementById('importFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importData = JSON.parse(event.target.result);
+
+                    // Validate the imported data has required fields
+                    if (!importData.personalInfo || !importData.accounts) {
+                        throw new Error('Invalid portfolio file format');
+                    }
+
+                    // Confirm import
+                    if (!confirm('Import this portfolio? This will replace your current data.')) {
+                        return;
+                    }
+
+                    // Import the data
+                    if (importData.theme) state.theme = importData.theme;
+                    if (importData.personalInfo) state.personalInfo = { ...state.personalInfo, ...importData.personalInfo };
+                    if (importData.bitcoinModel) {
+                        state.bitcoinModel = { ...state.bitcoinModel, ...importData.bitcoinModel };
+                        // Convert Infinity string back to Infinity
+                        if (state.bitcoinModel.powerLawPeriods) {
+                            state.bitcoinModel.powerLawPeriods = state.bitcoinModel.powerLawPeriods.map(p => ({
+                                ...p,
+                                duration: p.duration === "Infinity" ? Infinity : p.duration
+                            }));
+                        }
+                    }
+                    if (importData.assetPrices) state.assetPrices = { ...state.assetPrices, ...importData.assetPrices };
+                    if (importData.genericStocksCagr !== undefined) state.genericStocksCagr = importData.genericStocksCagr;
+                    if (importData.accounts) state.accounts = importData.accounts;
+
+                    // Apply theme
+                    if (state.theme === 'light') {
+                        document.body.classList.add('light-theme');
+                        document.getElementById('themeToggle').textContent = '☀️';
+                    } else {
+                        document.body.classList.remove('light-theme');
+                        document.getElementById('themeToggle').textContent = '🌙';
+                    }
+
+                    // Refresh UI
+                    renderPowerLawTable();
+                    renderAccounts();
+                    updateAllInputs();
+                    calculate();
+                    saveState();
+
+                    showToast('Portfolio imported successfully!', 'success');
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showToast('Failed to import: ' + error.message, 'error');
+                }
+            };
+
+            reader.onerror = () => {
+                showToast('Failed to read file', 'error');
+            };
+
+            reader.readAsText(file);
+            // Reset the input so the same file can be imported again
+            e.target.value = '';
+        });
+
         // Fix tooltip positioning for modals and top elements
         function positionTooltips() {
             document.querySelectorAll('.help-icon').forEach(icon => {
@@ -4555,6 +5025,7 @@
             init();
             positionTooltips();
             initTooltipPositioning();
+            setupScrollAnimations();
         });
     </script>
 </body>
