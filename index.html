@@ -141,16 +141,164 @@
         .logo-icon {
             font-size: 2rem;
             display: inline-block;
-            animation: bitcoinFloat 6s ease-in-out infinite;
+            animation: bitcoinFloat 4s ease-in-out infinite;
             transform-origin: center center;
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
 
         @keyframes bitcoinFloat {
-            0% { transform: rotate(-3deg) scale(1); }
-            25% { transform: rotate(2deg) scale(1.02); }
-            50% { transform: rotate(-2deg) scale(1.04); }
-            75% { transform: rotate(3deg) scale(1.02); }
-            100% { transform: rotate(-3deg) scale(1); }
+            0% { transform: rotate(-6deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.05); }
+            50% { transform: rotate(-5deg) scale(1.08); }
+            75% { transform: rotate(6deg) scale(1.05); }
+            100% { transform: rotate(-6deg) scale(1); }
+        }
+
+        .logo-icon.spin-3d {
+            animation: bitcoin3DSpin 0.8s ease-in-out;
+        }
+
+        @keyframes bitcoin3DSpin {
+            0% { transform: rotateY(0deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.2); }
+            100% { transform: rotateY(360deg) scale(1); }
+        }
+
+        /* Typewriter effect for logo text */
+        .logo-text {
+            display: inline;
+            font-family: var(--font-display);
+        }
+
+        .typewriter-cursor {
+            display: inline-block;
+            color: var(--bitcoin-orange);
+            animation: cursorBlink 0.7s step-end infinite;
+            margin-left: 0px;
+        }
+
+        .typewriter-cursor.hidden {
+            display: none;
+        }
+
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Nav icon fly-in animation */
+        .nav-icon-animate {
+            opacity: 0;
+            transform: translateX(100px) rotate(180deg) scale(0.3);
+        }
+        
+        .nav-icon-animate.fly-in {
+            animation: iconFlyIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: calc(var(--icon-delay) * 0.1s);
+        }
+
+        @keyframes iconFlyIn {
+            0% {
+                opacity: 0;
+                transform: translateX(100px) rotate(180deg) scale(0.3);
+            }
+            60% {
+                opacity: 1;
+                transform: translateX(-10px) rotate(-20deg) scale(1.2);
+            }
+            80% {
+                transform: translateX(5px) rotate(10deg) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) rotate(0deg) scale(1);
+            }
+        }
+        
+        /* Letter typing animation */
+        @keyframes letterTyping {
+            0% {
+                opacity: 0;
+                transform: scale(0.1);
+            }
+            70% {
+                opacity: 1;
+                transform: scale(1.3);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .logo-text span {
+            display: inline-block;
+            animation: letterTyping 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        .logo-text span.space {
+            width: 0.25em;
+        }
+        
+        /* Panel fly-in animations */
+        .panel-fly-right,
+        .panel-fly-left {
+            animation: none !important; /* Disable default card slideIn animation */
+        }
+        
+        .panel-fly-right {
+            opacity: 0;
+            transform: translateX(400px);
+        }
+        
+        .panel-fly-right.animate {
+            animation: flyInFromRight 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+        }
+        
+        .panel-fly-left {
+            opacity: 0;
+            transform: translateX(-400px);
+        }
+        
+        .panel-fly-left.animate {
+            animation: flyInFromLeft 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+        }
+        
+        @keyframes flyInFromRight {
+            0% {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+            60% {
+                opacity: 1;
+                transform: translateX(-15px);
+            }
+            80% {
+                transform: translateX(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes flyInFromLeft {
+            0% {
+                opacity: 0;
+                transform: translateX(-400px);
+            }
+            60% {
+                opacity: 1;
+                transform: translateX(15px);
+            }
+            80% {
+                transform: translateX(-8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .nav-actions {
@@ -218,6 +366,29 @@
             margin-bottom: 1.5rem;
             cursor: pointer;
             user-select: none;
+            padding: 0.5rem;
+            margin: -0.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover .card-header {
+            background: linear-gradient(90deg, rgba(247, 147, 26, 0.08), transparent);
+        }
+
+        .card:hover .card-title {
+            color: var(--bitcoin-orange);
+            text-shadow: 0 0 15px rgba(247, 147, 26, 0.4);
+        }
+
+        .card:hover .card-icon {
+            transform: scale(1.2) rotate(-5deg);
+            filter: drop-shadow(0 0 8px var(--bitcoin-orange));
+        }
+
+        .card:hover .collapse-icon {
+            color: var(--bitcoin-orange);
         }
 
         .card-title {
@@ -228,15 +399,17 @@
             align-items: center;
             gap: 0.5rem;
             color: var(--text-primary);
+            transition: all 0.3s ease;
         }
 
         .card-icon {
             font-size: 1.5rem;
+            transition: all 0.3s ease;
         }
 
         .collapse-icon {
             color: var(--text-tertiary);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, color 0.3s ease;
         }
 
         .collapsed .collapse-icon {
@@ -279,6 +452,21 @@
             box-shadow: 0 0 25px var(--bitcoin-glow), 0 15px 40px rgba(0, 0, 0, 0.5), 0 5px 15px rgba(0, 0, 0, 0.3);
             transform: translateY(-6px) scale(1.03);
             z-index: 10;
+        }
+
+        /* Disable hover animation for form-groups inside price-item (asset parameters) */
+        .price-item .form-group {
+            padding: 0;
+            border: none;
+            background: transparent;
+            transform: none;
+            transition: none;
+        }
+
+        .price-item .form-group:hover {
+            border-color: transparent;
+            box-shadow: none;
+            transform: none;
         }
 
         .form-label {
@@ -1043,7 +1231,8 @@
         /* Scroll-triggered animations */
         .scroll-animate {
             opacity: 0;
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .scroll-animate.animate-in {
@@ -1055,7 +1244,10 @@
             transform: translateY(40px);
         }
         .scroll-animate.fade-up.animate-in {
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+        }
+        .scroll-animate.fade-up.animate-in:hover {
+            transform: translateY(-6px) scale(1.03) !important;
         }
 
         /* Fade in from left */
@@ -1063,7 +1255,10 @@
             transform: translateX(-60px);
         }
         .scroll-animate.fade-left.animate-in {
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
+        }
+        .scroll-animate.fade-left.animate-in:hover {
+            transform: translateY(-6px) scale(1.03) !important;
         }
 
         /* Fade in from right */
@@ -1071,7 +1266,10 @@
             transform: translateX(60px);
         }
         .scroll-animate.fade-right.animate-in {
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
+        }
+        .scroll-animate.fade-right.animate-in:hover {
+            transform: translateY(-6px) scale(1.03) !important;
         }
 
         /* Scale up animation */
@@ -1081,6 +1279,9 @@
         .scroll-animate.scale-up.animate-in {
             transform: scale(1);
         }
+        .scroll-animate.scale-up.animate-in:hover {
+            transform: translateY(-6px) scale(1.03) !important;
+        }
 
         /* Rotate in animation */
         .scroll-animate.rotate-in {
@@ -1088,6 +1289,9 @@
         }
         .scroll-animate.rotate-in.animate-in {
             transform: rotate(0) scale(1);
+        }
+        .scroll-animate.rotate-in.animate-in:hover {
+            transform: translateY(-6px) scale(1.03) !important;
         }
 
         /* Stagger delay classes */
@@ -1179,6 +1383,18 @@
         .justify-between { justify-content: space-between; }
         .gap-1 { gap: 0.5rem; }
         .gap-2 { gap: 1rem; }
+
+        /* Power Law Preset Help Text Highlighting */
+        .preset-help-text {
+            display: inline;
+            transition: all 0.3s ease;
+        }
+
+        .preset-help-text.highlight {
+            color: var(--bitcoin-orange);
+            font-size: 1.05em;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -1187,23 +1403,23 @@
         <div class="nav-content">
             <a href="#" class="logo">
                 <span class="logo-icon">₿</span>
-                <span>Bitcoin Retirement Planner</span>
+                <span class="logo-text" id="logoText"></span><span class="typewriter-cursor">|</span>
             </a>
             <div class="nav-actions">
-                <button class="icon-btn" id="refreshPricesBtn" title="Refresh Prices">🔄</button>
-                <button class="icon-btn" id="saveBtn" title="Save to Browser">💾</button>
-                <button class="icon-btn" id="loadBtn" title="Load from Browser">📂</button>
-                <button class="icon-btn" id="exportBtn" title="Export to JSON File">📤</button>
-                <button class="icon-btn" id="importBtn" title="Import from JSON File">📥</button>
+                <button class="icon-btn nav-icon-animate" id="refreshPricesBtn" title="Refresh Prices" style="--icon-delay: 0;">🔄</button>
+                <button class="icon-btn nav-icon-animate" id="saveBtn" title="Save to Browser" style="--icon-delay: 1;">💾</button>
+                <button class="icon-btn nav-icon-animate" id="loadBtn" title="Load from Browser" style="--icon-delay: 2;">📂</button>
+                <button class="icon-btn nav-icon-animate" id="exportBtn" title="Export to JSON File" style="--icon-delay: 3;">📤</button>
+                <button class="icon-btn nav-icon-animate" id="importBtn" title="Import from JSON File" style="--icon-delay: 4;">📥</button>
                 <input type="file" id="importFileInput" accept=".json" style="display: none;">
-                <button class="icon-btn" id="themeToggle" title="Toggle Theme">🌙</button>
+                <button class="icon-btn nav-icon-animate" id="themeToggle" title="Toggle Theme" style="--icon-delay: 5;">🌙</button>
             </div>
         </div>
     </nav>
 
     <div class="container">
         <!-- Personal Information -->
-        <div class="card" id="personalInfoCard">
+        <div class="card panel-fly-right" id="personalInfoCard">
             <div class="card-header" onclick="toggleCard('personalInfoCard')">
                 <div class="card-title">
                     <span class="card-icon">📋</span>
@@ -1323,7 +1539,7 @@
         </div>
 
         <!-- Bitcoin Growth Model -->
-        <div class="card" id="bitcoinModelCard">
+        <div class="card panel-fly-left" id="bitcoinModelCard">
             <div class="card-header" onclick="toggleCard('bitcoinModelCard')">
                 <div class="card-title">
                     <span class="card-icon">📈</span>
@@ -1363,13 +1579,13 @@
                 
                 <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-                        <button class="btn btn-secondary" onclick="applyPowerLawPreset('standard')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        <button class="btn btn-secondary preset-btn" data-preset="standard" onclick="applyPowerLawPreset('standard')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                             Standard
                         </button>
-                        <button class="btn btn-secondary" onclick="applyPowerLawPreset('conservative')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        <button class="btn btn-secondary preset-btn" data-preset="conservative" onclick="applyPowerLawPreset('conservative')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                             Conservative
                         </button>
-                        <button class="btn btn-secondary" onclick="applyPowerLawPreset('bear')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        <button class="btn btn-secondary preset-btn" data-preset="bear" onclick="applyPowerLawPreset('bear')" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
                             Bear Market
                         </button>
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -1381,8 +1597,8 @@
                             </button>
                         </div>
                     </div>
-                    <div style="font-size: 0.8rem; color: var(--text-tertiary);">
-                        <strong>Standard:</strong> 32%→9% • <strong>Conservative:</strong> 25%→7% • <strong>Bear:</strong> 15%→5%
+                    <div id="preset-help-text" style="font-size: 0.8rem; color: var(--text-tertiary);">
+                        <span class="preset-help-text" data-preset="standard"><strong>Standard:</strong> 32%→9%</span> • <span class="preset-help-text" data-preset="conservative"><strong>Conservative:</strong> 25%→7%</span> • <span class="preset-help-text" data-preset="bear"><strong>Bear:</strong> 15%→5%</span>
                     </div>
                 </div>
 
@@ -1413,8 +1629,8 @@
             <div class="card-content">
                 <div class="price-grid">
                     <div class="price-item">
-                        <div class="price-label">
-                            MSTR Leverage Ratio
+                        <div class="price-label" style="color: #e63946;">
+                            <span style="color: #e63946;">MSTR</span> Leverage Ratio
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -1436,7 +1652,7 @@
                     
                     <div class="price-item">
                         <div class="price-label">
-                            ₿ ETF Expense Ratio
+                            <span style="color: #f77f00;">₿ ETF</span> Expense Ratio
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -1455,7 +1671,7 @@
                     
                     <div class="price-item">
                         <div class="price-label">
-                            STRC Dividend Yield
+                            <span style="color: #4c9aff;">STRC</span> Dividend Yield
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -1474,7 +1690,7 @@
                     
                     <div class="price-item">
                         <div class="price-label">
-                            SATA Dividend Yield
+                            <span style="color: #7c3aed;">SATA</span> Dividend Yield
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -1493,7 +1709,7 @@
                     
                     <div class="price-item">
                         <div class="price-label">
-                            Generic Stocks CAGR
+                            <span style="color: #10b981;">Generic Stocks</span> CAGR
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -1512,7 +1728,7 @@
                     
                     <div class="price-item">
                         <div class="price-label">
-                            Cash / Money Market
+                            <span style="color: #22c55e;">Cash</span> / Money Market
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -2076,15 +2292,15 @@
             allocationYear: 0 // Year to display in allocation pie charts (0 = current)
         };
 
-        // Asset Colors
+        // Asset Colors - distinct palette for easy chart readability
         const ASSET_COLORS = {
-            mstr: '#f7931a',
-            fbtc: '#ff6b35',
-            bitcoin: '#ffaa00',
-            strc: '#4c9aff',
-            sata: '#7c3aed',
-            stocks: '#10b981',
-            cash: '#6b7a9e'
+            mstr: '#e63946',      // Red - for leveraged Bitcoin exposure
+            fbtc: '#f77f00',      // Bright orange - Bitcoin ETF
+            bitcoin: '#ffba08',   // Golden yellow - Direct Bitcoin
+            strc: '#4c9aff',      // Blue - STRC
+            sata: '#7c3aed',      // Purple - SATA
+            stocks: '#10b981',    // Green - Stocks
+            cash: '#22c55e'       // Bright green - Cash/Money
         };
         
         // Asset display names
@@ -2240,6 +2456,29 @@
             
             // Auto-fetch Bitcoin price on load
             fetchBitcoinPrice();
+            
+            // Setup preset button hover effects
+            setupPresetHoverEffects();
+        }
+        
+        // Setup hover effects for preset buttons
+        function setupPresetHoverEffects() {
+            const presetButtons = document.querySelectorAll('.preset-btn');
+            
+            presetButtons.forEach(button => {
+                const presetType = button.dataset.preset;
+                const helpText = document.querySelector(`.preset-help-text[data-preset="${presetType}"]`);
+                
+                if (helpText) {
+                    button.addEventListener('mouseenter', () => {
+                        helpText.classList.add('highlight');
+                    });
+                    
+                    button.addEventListener('mouseleave', () => {
+                        helpText.classList.remove('highlight');
+                    });
+                }
+            });
         }
 
         // Toggle Card
@@ -4679,8 +4918,12 @@
 
             // Add animation classes to elements and observe them
             const animateElements = () => {
-                // Cards - fade up with stagger
+                // Cards - fade up with stagger (skip custom animated panels)
                 document.querySelectorAll('.card').forEach((card, index) => {
+                    // Skip cards with custom fly-in animations
+                    if (card.classList.contains('panel-fly-left') || card.classList.contains('panel-fly-right')) {
+                        return;
+                    }
                     if (!card.classList.contains('scroll-animate')) {
                         card.classList.add('scroll-animate', 'fade-up');
                         card.style.transitionDelay = `${index * 0.1}s`;
@@ -4697,8 +4940,11 @@
                     }
                 });
 
-                // Form groups - staggered scale up
+                // Form groups - staggered scale up (exclude those inside price-item)
                 document.querySelectorAll('.form-group').forEach((group, index) => {
+                    // Skip form-groups inside price-item (asset parameters)
+                    if (group.closest('.price-item')) return;
+
                     if (!group.classList.contains('scroll-animate')) {
                         group.classList.add('scroll-animate', 'scale-up');
                         group.style.transitionDelay = `${(index % 6) * 0.08}s`;
@@ -4706,11 +4952,11 @@
                     }
                 });
 
-                // Metric cards - rotate in with stagger
+                // Metric cards - staggered left to right entrance
                 document.querySelectorAll('.metric-card').forEach((card, index) => {
                     if (!card.classList.contains('scroll-animate')) {
-                        card.classList.add('scroll-animate', 'rotate-in');
-                        card.style.transitionDelay = `${index * 0.1}s`;
+                        card.classList.add('scroll-animate', 'fade-left');
+                        card.style.transitionDelay = `${index * 0.15}s`;
                         scrollObserver.observe(card);
                     }
                 });
@@ -5273,6 +5519,111 @@
         window.addEventListener('scroll', positionTooltips);
         window.addEventListener('resize', positionTooltips);
 
+        // Typewriter effect for logo title
+        function setupTypewriter() {
+            const logoText = document.getElementById('logoText');
+            const cursor = document.querySelector('.typewriter-cursor');
+            if (!logoText) return;
+
+            const text = 'Bitcoin Retirement Planner';
+            let index = 0;
+            // Consistent delay to complete in ~1.5 seconds
+            const charDelay = 55;
+            let startTime = null;
+
+            function typeNextChar(timestamp) {
+                if (!startTime) startTime = timestamp;
+                
+                const expectedIndex = Math.floor((timestamp - startTime) / charDelay);
+                
+                // Type all characters up to the expected index
+                while (index <= expectedIndex && index < text.length) {
+                    // Create a span for each character with animation
+                    const span = document.createElement('span');
+                    const char = text[index];
+                    
+                    if (char === ' ') {
+                        span.innerHTML = '&nbsp;';
+                        span.classList.add('space');
+                    } else {
+                        span.textContent = char;
+                    }
+                    
+                    logoText.appendChild(span);
+                    index++;
+                }
+                
+                if (index < text.length) {
+                    requestAnimationFrame(typeNextChar);
+                } else {
+                    // After typewriter completes, hide cursor and trigger panel animations
+                    setTimeout(() => {
+                        if (cursor) cursor.classList.add('hidden');
+                        // Trigger panel animations after typewriter is done
+                        triggerPanelAnimations();
+                    }, 200);
+                }
+            }
+
+            // Start typing after a brief delay
+            setTimeout(() => {
+                requestAnimationFrame(typeNextChar);
+            }, 300);
+        }
+        
+        // Trigger panel fly-in animations
+        function triggerPanelAnimations() {
+            const personalInfoCard = document.getElementById('personalInfoCard');
+            const bitcoinModelCard = document.getElementById('bitcoinModelCard');
+            
+            if (personalInfoCard) {
+                personalInfoCard.classList.add('animate');
+            }
+            
+            if (bitcoinModelCard) {
+                bitcoinModelCard.classList.add('animate');
+            }
+            
+            // Trigger icon animations after panels finish flying in (1.2s panel duration + small delay)
+            setTimeout(() => {
+                triggerIconAnimations();
+            }, 1300);
+        }
+
+        // Trigger icon fly-in animations after typewriter completes
+        function triggerIconAnimations() {
+            const icons = document.querySelectorAll('.nav-icon-animate');
+            icons.forEach(icon => {
+                icon.classList.add('fly-in');
+            });
+        }
+
+        // Random 3D spin for Bitcoin logo
+        function setupBitcoinSpin() {
+            const logoIcon = document.querySelector('.logo-icon');
+            if (!logoIcon) return;
+
+            function triggerSpin() {
+                logoIcon.classList.add('spin-3d');
+                // Remove class after animation completes to allow re-triggering
+                setTimeout(() => {
+                    logoIcon.classList.remove('spin-3d');
+                }, 800);
+            }
+
+            // Random interval between 4-10 seconds
+            function scheduleNextSpin() {
+                const delay = 4000 + Math.random() * 6000;
+                setTimeout(() => {
+                    triggerSpin();
+                    scheduleNextSpin();
+                }, delay);
+            }
+
+            // Start the random spin cycle after initial 5 second delay
+            setTimeout(scheduleNextSpin, 5000);
+        }
+
         // Initialize on load
         window.addEventListener('DOMContentLoaded', () => {
             init();
@@ -5280,6 +5631,8 @@
             initTooltipPositioning();
             setupScrollAnimations();
             setupPageScrollAnimations();
+            setupBitcoinSpin();
+            setupTypewriter();
         });
     </script>
 </body>
