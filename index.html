@@ -1765,6 +1765,9 @@
                     Portfolio Accounts
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="btn btn-secondary" onclick="event.stopPropagation(); toggleAllAccounts()" title="Enable or disable all accounts">
+                        <span id="toggleAllIcon">👁️</span> Toggle All
+                    </button>
                     <button class="btn btn-primary" onclick="event.stopPropagation(); showAddAccountModal()">+ Add Account</button>
                     <span class="collapse-icon">▼</span>
                 </div>
@@ -4837,6 +4840,37 @@
                 showToast('Error toggling account', 'error');
             }
         };
+        
+        window.toggleAllAccounts = function() {
+            try {
+                if (state.accounts.length === 0) {
+                    showToast('No accounts to toggle', 'info');
+                    return;
+                }
+                
+                // Check if any accounts are enabled
+                const anyEnabled = state.accounts.some(a => a.enabled !== false);
+                
+                // If any are enabled, disable all. Otherwise, enable all.
+                const newState = !anyEnabled;
+                
+                state.accounts.forEach(account => {
+                    account.enabled = newState;
+                });
+                
+                renderAccounts();
+                calculate();
+                saveState();
+                
+                const message = newState ? 
+                    `All ${state.accounts.length} accounts enabled` : 
+                    `All ${state.accounts.length} accounts disabled`;
+                showToast(message, 'success');
+            } catch (error) {
+                console.error('Error toggling all accounts:', error);
+                showToast('Error toggling all accounts', 'error');
+            }
+        };
 
         // Utility Functions
         function formatNumber(num) {
@@ -5205,7 +5239,7 @@
             // Force reflow to ensure animation plays
             toast.offsetHeight;
 
-            // Auto-remove after 3 seconds
+            // Auto-remove after 2 seconds
             const hideTimeout = window.setTimeout(function() {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateX(100px)';
@@ -5220,7 +5254,7 @@
                         console.error('Error removing toast:', e);
                     }
                 }, 350);
-            }, 3000);
+            }, 2000);
         }
 
         // State Management
