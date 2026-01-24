@@ -586,6 +586,15 @@
             color: var(--text-tertiary);
         }
 
+        /* Number input spinner buttons - use color-scheme for dark theme */
+        input[type="number"] {
+            color-scheme: dark;
+        }
+
+        .light-theme input[type="number"] {
+            color-scheme: light;
+        }
+
         /* Slider */
         .slider-group {
             display: flex;
@@ -1476,7 +1485,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">
-                            Annual Expenses (at retirement)
+                            Annual Retirement Expenses
                             <span class="help-icon">
                                 ⓘ
                                 <div class="help-tooltip">
@@ -4914,7 +4923,7 @@
                         entry.target.classList.add('animate-in');
                     }
                 });
-            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+            }, { threshold: 0.05, rootMargin: '0px 0px 100px 0px' });
 
             // Add animation classes to elements and observe them
             const animateElements = () => {
@@ -5556,12 +5565,10 @@
                 if (index < text.length) {
                     requestAnimationFrame(typeNextChar);
                 } else {
-                    // After typewriter completes, hide cursor and trigger panel animations
-                    setTimeout(() => {
-                        if (cursor) cursor.classList.add('hidden');
-                        // Trigger panel animations after typewriter is done
-                        triggerPanelAnimations();
-                    }, 200);
+                    // After typewriter completes, hide cursor and trigger icon animations
+                    if (cursor) cursor.classList.add('hidden');
+                    // Trigger icon animations immediately after typewriter is done
+                    triggerIconAnimations();
                 }
             }
 
@@ -5583,11 +5590,6 @@
             if (bitcoinModelCard) {
                 bitcoinModelCard.classList.add('animate');
             }
-            
-            // Trigger icon animations after panels finish flying in (1.2s panel duration + small delay)
-            setTimeout(() => {
-                triggerIconAnimations();
-            }, 1300);
         }
 
         // Trigger icon fly-in animations after typewriter completes
@@ -5596,6 +5598,11 @@
             icons.forEach(icon => {
                 icon.classList.add('fly-in');
             });
+            
+            // Trigger panel animations after icons finish flying in (600ms icon duration)
+            setTimeout(() => {
+                triggerPanelAnimations();
+            }, 600);
         }
 
         // Random 3D spin for Bitcoin logo
