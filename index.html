@@ -1844,11 +1844,14 @@
                 <div id="allocationChart" class="chart-container hidden" style="height: auto; min-height: 500px; padding-bottom: 2rem;">
                     <!-- Portfolio Total Display -->
                     <div style="text-align: center; margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px; border: 2px solid var(--bitcoin-orange);">
-                        <div id="allocationTotalLabel" style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                        <div id="allocationTotalLabel" style="color: var(--text-secondary); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
                             Total Portfolio Value
                         </div>
                         <div id="allocationTotalValue" style="font-size: 2.5rem; font-weight: 700; color: var(--bitcoin-orange); font-family: 'Courier New', monospace;">
                             $0
+                        </div>
+                        <div id="dashboardBtcPrice" style="color: var(--bitcoin-orange); font-size: 0.875rem; font-weight: 500; font-family: var(--font-mono); margin-top: 0.5rem;">
+                            1 Bitcoin = $100,000
                         </div>
                     </div>
                     
@@ -2334,6 +2337,8 @@
             updateAllInputs();
             initCharts();
             updateAllocationSlider(); // Initialize allocation age slider and display
+            updateBtcPriceDisplay('summaryBtcPrice', 0); // Initialize BTC price in Account Summary header
+            updateBtcPriceDisplay('dashboardBtcPrice', 0); // Initialize BTC price in Dashboard header
             calculate();
             
             // Event listeners for inputs
@@ -2385,6 +2390,11 @@
             // Bitcoin price manual change
             document.getElementById('btcPrice').addEventListener('input', (e) => {
                 state.bitcoinModel.currentPrice = parseFloat(e.target.value);
+                // Update BTC price displays with current slider values
+                const summarySlider = document.getElementById('summaryAgeSlider');
+                const allocationSlider = document.getElementById('allocationAgeSlider');
+                updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
+                updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
                 calculate();
             });
             
@@ -2533,6 +2543,11 @@
 
         function updatePowerLawCagr(index, value) {
             state.bitcoinModel.powerLawPeriods[index].cagr = parseFloat(value);
+            // Update BTC price displays with current slider values
+            const summarySlider = document.getElementById('summaryAgeSlider');
+            const allocationSlider = document.getElementById('allocationAgeSlider');
+            updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
+            updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
             calculate();
         }
         
@@ -2550,6 +2565,11 @@
                     period.cagr = values[index];
                 });
                 renderPowerLawTable();
+                // Update BTC price displays with current slider values
+                const summarySlider = document.getElementById('summaryAgeSlider');
+                const allocationSlider = document.getElementById('allocationAgeSlider');
+                updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
+                updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
                 calculate();
                 showToast(`Applied ${preset.charAt(0).toUpperCase() + preset.slice(1)} preset`, 'success');
             }
@@ -2567,6 +2587,11 @@
                 period.cagr = value;
             });
             renderPowerLawTable();
+            // Update BTC price displays with current slider values
+            const summarySlider = document.getElementById('summaryAgeSlider');
+            const allocationSlider = document.getElementById('allocationAgeSlider');
+            updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
+            updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
             calculate();
             showToast(`Applied constant ${value}% CAGR to all periods`, 'success');
         };
@@ -2586,7 +2611,13 @@
                 
                 document.getElementById('btcPrice').value = price;
                 document.getElementById('btcTimestamp').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
-                
+
+                // Update BTC price displays with current slider values
+                const summarySlider = document.getElementById('summaryAgeSlider');
+                const allocationSlider = document.getElementById('allocationAgeSlider');
+                updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
+                updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
+
                 calculate();
                 showToast('Prices updated successfully', 'success');
             } catch (error) {
@@ -2633,7 +2664,21 @@
             
             return multiplier;
         }
-        
+
+        // Get formatted Bitcoin price at a given year offset
+        function getBtcPriceAtYear(yearOffset) {
+            const btcPrice = state.bitcoinModel.currentPrice * calculateBTCGrowthMultiplier(yearOffset);
+            return `1 Bitcoin = $${formatNumber(Math.round(btcPrice))}`;
+        }
+
+        // Update BTC price display in a header element
+        function updateBtcPriceDisplay(elementId, yearOffset) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.textContent = getBtcPriceAtYear(yearOffset);
+            }
+        }
+
         // Calculate average return during gap period
         function calculateAverageGapReturn() {
             // Get taxable accounts only - and only enabled ones
@@ -3553,6 +3598,21 @@
             
             // Update charts
             updateCharts();
+
+            // Update Account Summary values at current slider position
+            const summarySlider = document.getElementById('summaryAgeSlider');
+            if (summarySlider) {
+                const yearOffset = parseInt(summarySlider.value) || 0;
+                window.updateSummaryAge(yearOffset);
+            }
+
+            // Update Allocation tab values at current slider position
+            const allocationSlider = document.getElementById('allocationAgeSlider');
+            if (allocationSlider) {
+                const yearOffset = parseInt(allocationSlider.value) || 0;
+                window.updateAllocationAge(yearOffset);
+            }
+
             saveState();
         }
 
@@ -4193,6 +4253,9 @@
                 const label = yearOffset === 0 ? `${currentAge} (Current)` : displayAge.toString();
                 document.getElementById('allocationAgeDisplay').textContent = label;
 
+                // Update BTC price display in dashboard header
+                updateBtcPriceDisplay('dashboardBtcPrice', yearOffset);
+
                 // Update total portfolio label with age
                 const totalLabel = document.getElementById('allocationTotalLabel');
                 if (totalLabel) {
@@ -4695,8 +4758,9 @@
                 <div class="tax-summary-container" style="padding: 1.5rem;">
                     <!-- Total Portfolio Value at top -->
                     <div style="margin-bottom: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); border-radius: 12px; border: 2px solid var(--bitcoin-orange); text-align: center;">
-                        <div id="summaryTotalLabel" style="color: var(--text-secondary); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Total Portfolio Value at Age ${state.personalInfo.currentAge}</div>
+                        <div id="summaryTotalLabel" style="color: var(--text-secondary); font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">Total Portfolio Value at Age ${state.personalInfo.currentAge}</div>
                         <div id="summaryTotalValue" class="animate-value" data-value="${totalPortfolio}" style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--bitcoin-orange);">$${formatNumber(totalPortfolio)}</div>
+                        <div id="summaryBtcPrice" style="color: var(--bitcoin-orange); font-size: 0.875rem; font-weight: 500; font-family: var(--font-mono); margin-top: 0.5rem;">${getBtcPriceAtYear(0)}</div>
                     </div>
 
                     <!-- Tax treatment breakdown -->
@@ -5100,6 +5164,9 @@
                 if (ageDisplay) {
                     ageDisplay.textContent = label;
                 }
+
+                // Update BTC price display in header
+                updateBtcPriceDisplay('summaryBtcPrice', yearOffset);
 
                 // Update total portfolio label with age
                 const totalLabel = document.getElementById('summaryTotalLabel');
