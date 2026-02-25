@@ -3485,21 +3485,23 @@
                                 }
                             }
                             
-                            // Calculate net received and update withdrawal breakdown
+                            // Calculate net received and update withdrawal breakdown (record NET amounts so
+                            // the Income chart shows actual spendable income, not gross pre-tax withdrawal)
                             let netReceived;
                             if (withdrawalAccount.taxType === 'ordinaryIncome') {
                                 netReceived = actualGrossWithdrawal * (1 - ordinaryTaxRate);
-                                withdrawalBreakdown.ordinaryIncome += actualGrossWithdrawal;
+                                withdrawalBreakdown.ordinaryIncome += netReceived; // net after tax
                             } else if (withdrawalAccount.taxType === 'capitalGains') {
                                 // Split between cash (tax-free) and capital gains
                                 const nonCashWithdrawn = actualGrossWithdrawal - cashWithdrawn;
-                                withdrawalBreakdown.cash += cashWithdrawn;  // Cash is tax-free
-                                withdrawalBreakdown.capitalGains += nonCashWithdrawn;  // Rest has capital gains
-                                
+                                withdrawalBreakdown.cash += cashWithdrawn;  // Cash is tax-free (gross = net)
+                                const netNonCash = nonCashWithdrawn * (1 - capitalGainsTaxRate);
+                                withdrawalBreakdown.capitalGains += netNonCash; // net after capital gains tax
+
                                 // Calculate net: cash is fully received, non-cash is taxed
-                                netReceived = cashWithdrawn + (nonCashWithdrawn * (1 - capitalGainsTaxRate));
+                                netReceived = cashWithdrawn + netNonCash;
                             } else {
-                                // Tax-free (Roth)
+                                // Tax-free (Roth) — gross = net, no change
                                 netReceived = actualGrossWithdrawal;
                                 withdrawalBreakdown.taxFree += actualGrossWithdrawal;
                             }
@@ -4069,16 +4071,17 @@
 
                         ctx.strokeStyle = '#10b981'; // Green for SS income
                         ctx.lineWidth = 2;
-                        ctx.setLineDash([6, 3]);
+                        ctx.setLineDash([5, 5]);
                         ctx.beginPath();
                         ctx.moveTo(xPos, top);
                         ctx.lineTo(xPos, bottom);
                         ctx.stroke();
+                        ctx.setLineDash([]);
 
                         ctx.fillStyle = '#10b981';
                         ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
-                        ctx.fillText('SS Age ' + ssInfo.startAge, xPos, top - 5);
+                        ctx.fillText('Social Security (Age ' + ssInfo.startAge + ')', xPos, top - 5);
                     }
 
                     // Draw planned expense bands (only enabled ones)
@@ -4228,14 +4231,14 @@
                             borderWidth: 1
                         },
                         {
-                            label: 'Capital Gains Tax',
+                            label: 'Taxable / Self-Custody (Net)',
                             data: [],
                             backgroundColor: 'rgba(245, 158, 11, 0.8)',
                             borderColor: '#f59e0b',
                             borderWidth: 1
                         },
                         {
-                            label: 'Ordinary Income Tax',
+                            label: 'Tax-Deferred / Traditional (Net)',
                             data: [],
                             backgroundColor: 'rgba(239, 68, 68, 0.8)',
                             borderColor: '#ef4444',
@@ -4284,7 +4287,7 @@
                         y: {
                             title: {
                                 display: true,
-                                text: 'Gross Withdrawal ($)'
+                                text: 'Net Annual Spending ($)'
                             },
                             stacked: true,
                             ticks: {
@@ -4544,11 +4547,12 @@
                 let taxFreeAccum = 0;
                 let capitalGainsAccum = 0;
                 let ordinaryIncomeAccum = 0;
-                
-                projectionData.forEach((d, index) => {
+                let countPerAge = 0; // Track half-year periods per age bucket
+
+                projectionData.forEach((d) => {
                     if (d.spending > 0) {
                         const wholeAge = Math.floor(d.age);
-                        
+
                         // Start accumulating for a new age
                         if (yearAccumulator !== wholeAge) {
                             // Push previous age's data if exists
@@ -4558,30 +4562,34 @@
                                 capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum });
                                 ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum });
                             }
-                            
+
                             // Reset for new age
                             yearAccumulator = wholeAge;
                             cashAccum = 0;
                             taxFreeAccum = 0;
                             capitalGainsAccum = 0;
                             ordinaryIncomeAccum = 0;
+                            countPerAge = 0;
                         }
-                        
+
                         // Accumulate this period's withdrawals
                         cashAccum += d.withdrawalBreakdown.cash || 0;
                         taxFreeAccum += d.withdrawalBreakdown.taxFree;
                         capitalGainsAccum += d.withdrawalBreakdown.capitalGains;
                         ordinaryIncomeAccum += d.withdrawalBreakdown.ordinaryIncome;
-                        
-                        // If this is the last data point, push accumulated data
-                        if (index === projectionData.length - 1 && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0)) {
-                            cashData.push({ x: yearAccumulator, y: cashAccum });
-                            taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum });
-                            capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum });
-                            ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum });
-                        }
+                        countPerAge++;
                     }
                 });
+
+                // Flush any remaining accumulated data after the loop
+                if (yearAccumulator !== null && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0)) {
+                    // Scale ×2 if only one half-year was recorded (projection loop truncated at year boundary)
+                    const scale = countPerAge === 1 ? 2 : 1;
+                    cashData.push({ x: yearAccumulator, y: cashAccum * scale });
+                    taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum * scale });
+                    capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum * scale });
+                    ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum * scale });
+                }
                 
                 state.charts.withdrawal.data.datasets[0].data = cashData;
                 state.charts.withdrawal.data.datasets[1].data = taxFreeData;
