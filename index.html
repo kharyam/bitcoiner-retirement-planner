@@ -1779,6 +1779,23 @@
             </div>
         </div>
         
+        <!-- Planned Expenses -->
+        <div class="card" id="plannedExpensesCard">
+            <div class="card-header" onclick="toggleCard('plannedExpensesCard')">
+                <div class="card-title">
+                    <span class="card-icon">📅</span>
+                    Planned Expenses
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="btn btn-primary" onclick="event.stopPropagation(); showAddExpenseModal()">+ Add Expense</button>
+                    <span class="collapse-icon">▼</span>
+                </div>
+            </div>
+            <div class="card-content" id="expensesList">
+                <!-- Populated by renderPlannedExpenses() -->
+            </div>
+        </div>
+
         <!-- Account Summary -->
         <div class="card" id="accountSummaryCard">
             <div class="card-header">
@@ -2089,7 +2106,9 @@
                         <div class="help-tooltip">
                             <div class="help-tooltip-title">HSA Withdrawals After 65</div>
                             <div class="help-tooltip-text">
-                                After age 65, HSA funds can be withdrawn for any purpose (taxed as ordinary income). However, it's often optimal to reserve HSA for medical expenses. Check this box only if you want to include HSA in your retirement withdrawal strategy.
+                                After age 65, HSA funds can be withdrawn for any purpose (taxed as ordinary income).<br><br>
+                                <strong>Checked:</strong> HSA is included in the normal withdrawal order (after Traditional accounts, before Roth) — proactive use.<br><br>
+                                <strong>Unchecked:</strong> HSA is reserved for medical expenses but used as a last resort in projections once all other accounts are depleted — preventing unrealistic infinite growth.
                             </div>
                         </div>
                     </span>
@@ -2297,6 +2316,93 @@
         </div>
     </div>
 
+    <!-- Planned Expense Modal -->
+    <div id="expenseModal" class="modal-overlay hidden" onclick="closeExpenseModalOnBackdrop(event)">
+        <div class="modal" onclick="event.stopPropagation()" style="max-width: 560px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="expenseModalTitle">Add Planned Expense</h2>
+                <button class="modal-close" onclick="closeExpenseModal()">✕</button>
+            </div>
+
+            <div class="form-group mb-2">
+                <label class="form-label">Label *</label>
+                <input type="text" class="form-input" id="expenseLabel" placeholder="e.g. College – Child 1">
+            </div>
+
+            <div class="form-group mb-2">
+                <label class="form-label">Category</label>
+                <select class="form-input" id="expenseCategory">
+                    <option value="education">🎓 Education</option>
+                    <option value="realestate">🏠 Real Estate</option>
+                    <option value="vehicle">🚗 Vehicle</option>
+                    <option value="healthcare">💊 Healthcare</option>
+                    <option value="travel">✈️ Travel</option>
+                    <option value="gift">🎁 Gift / Estate</option>
+                    <option value="other">📦 Other</option>
+                </select>
+            </div>
+
+            <div class="form-grid mb-2">
+                <div class="form-group">
+                    <label class="form-label">Annual Amount ($) *</label>
+                    <input type="number" class="form-input" id="expenseAmount" placeholder="50000" min="1" step="1000">
+                    <small style="color: var(--text-tertiary); font-size: 0.8rem;">In today's dollars</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duration (years) *</label>
+                    <input type="number" class="form-input" id="expenseDuration" placeholder="1" min="1" step="1" value="1">
+                    <small style="color: var(--text-tertiary); font-size: 0.8rem;">1 = one-time lump sum</small>
+                </div>
+            </div>
+
+            <div class="form-grid mb-2">
+                <div class="form-group">
+                    <label class="form-label">Start Age *</label>
+                    <input type="number" class="form-input" id="expenseStartAge" placeholder="55" min="1" step="1" oninput="updateExpenseInflationPreview()">
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 4px;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" id="expenseInflationAdjust" checked onchange="updateExpenseInflationPreview()" style="width: 16px; height: 16px; margin: 0;">
+                        Inflation-adjust to future value
+                    </label>
+                    <small id="expenseInflationPreview" style="color: var(--accent-amber); font-size: 0.8rem; margin-top: 4px;">–</small>
+                </div>
+            </div>
+
+            <div class="form-group mb-2">
+                <label class="form-label">Withdrawal Source</label>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.4rem;">
+                    <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer;">
+                        <input type="radio" name="expenseSource" value="smart" checked onchange="updateExpenseSourceUI()" style="margin-top: 3px;">
+                        <div>
+                            <strong>🤖 Smart (Tax-Optimized)</strong>
+                            <div style="color: var(--text-tertiary); font-size: 0.8rem;">Follows standard smart withdrawal order: taxable → self-custody BTC → traditional → Roth</div>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer;">
+                        <input type="radio" name="expenseSource" value="account" onchange="updateExpenseSourceUI()" style="margin-top: 3px;">
+                        <div>
+                            <strong>🏦 From Specific Account</strong>
+                            <div style="color: var(--text-tertiary); font-size: 0.8rem;">Pull from a designated account first; remainder falls through to smart order</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group mb-2" id="expenseAccountGroup" style="display: none;">
+                <label class="form-label">Account</label>
+                <select class="form-input" id="expenseSourceAccountId">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeExpenseModal()">Cancel</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="saveExpense()">Save Expense</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global State
         let state = {
@@ -2337,7 +2443,9 @@
             overviewViewMode: 'account', // 'account', 'asset', or 'tax'
             gapShortfallInfo: { hasShortfall: false }, // Track gap period shortfall for chart overlay
             allocationYear: 0, // Year to display in allocation pie charts (0 = current)
-            chartRange: null // {startAge, endAge} for overview chart; null = full range
+            chartRange: null, // {startAge, endAge} for overview chart; null = full range
+            plannedExpenses: [], // Array of planned expense objects
+            editingExpenseId: null // ID of expense being edited (null = new)
         };
 
         // Asset Colors - distinct palette for easy chart readability
@@ -2362,11 +2470,23 @@
             cash: 'Cash'
         };
 
+        // Planned expense category icons
+        const EXPENSE_CATEGORY_ICONS = {
+            education:  '🎓',
+            realestate: '🏠',
+            vehicle:    '🚗',
+            healthcare: '💊',
+            travel:     '✈️',
+            gift:       '🎁',
+            other:      '📦'
+        };
+
         // Initialize App
         function init() {
             loadState();
             renderPowerLawTable();
             renderAccounts();
+            renderPlannedExpenses();
             updateAllInputs();
             initCharts();
             updateAllocationSlider(); // Initialize allocation age slider and display
@@ -2428,7 +2548,8 @@
                 const allocationSlider = document.getElementById('allocationAgeSlider');
                 updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
                 updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
-                calculate();
+                calculate(); // syncs selfCustodyBTC balances
+                renderAccounts(); // refresh account cards
             });
             
             // Asset price changes
@@ -2641,7 +2762,7 @@
                 
                 state.bitcoinModel.currentPrice = price;
                 state.bitcoinModel.lastFetch = new Date().toISOString();
-                
+
                 document.getElementById('btcPrice').value = price;
                 document.getElementById('btcTimestamp').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
 
@@ -2651,7 +2772,8 @@
                 updateBtcPriceDisplay('summaryBtcPrice', summarySlider ? parseInt(summarySlider.value) : 0);
                 updateBtcPriceDisplay('dashboardBtcPrice', allocationSlider ? parseInt(allocationSlider.value) : 0);
 
-                calculate();
+                calculate(); // calculate() syncs selfCustodyBTC balances before running
+                renderAccounts(); // Refresh account cards with updated BTC balances
                 showToast('Prices updated successfully', 'success');
             } catch (error) {
                 console.error('Failed to fetch Bitcoin price:', error);
@@ -3011,14 +3133,90 @@
                     });
                 }
                 
-                // PHASE 3: Handle withdrawals (if retired)
-                if (spendingThisYear > 0) {
-                    let remainingToWithdraw = spendingThisYear;
-                    
+                // PHASE 3: Handle withdrawals (retirement spending + planned expenses)
+                // Compute planned expense withdrawals for this half-year increment
+                const plannedExpenses = state.plannedExpenses || [];
+                let plannedSpendingThisIncrement = 0;
+                const activePlannedExpenses = [];
+
+                plannedExpenses.forEach(expense => {
+                    if (expense.enabled === false) return; // Skip disabled expenses
+                    const expEndAge = expense.startAge + (expense.duration || 1);
+                    if (ageRounded >= expense.startAge && ageRounded < expEndAge) {
+                        const yearsUntilStart = Math.max(0, expense.startAge - currentAge);
+                        const inflMult = expense.inflationAdjust
+                            ? Math.pow(1 + inflationRate, yearsUntilStart)
+                            : 1;
+                        const annualAmount = expense.amount * inflMult;
+                        const halfYearAmount = annualAmount * increment;
+                        plannedSpendingThisIncrement += halfYearAmount;
+                        activePlannedExpenses.push({ ...expense, resolvedAmount: halfYearAmount });
+                    }
+                });
+
+                const totalSpendingThisIncrement = spendingThisYear + plannedSpendingThisIncrement;
+
+                if (totalSpendingThisIncrement > 0) {
+                    // Helper: withdraw from a specific account using within-account asset order
+                    const withdrawFromAccount = (account, grossAmount) => {
+                        let remaining = grossAmount;
+                        const currentBtcReturn = getBitcoinCAGRForYear(Math.floor(year));
+                        const maxPrefReturn = currentBtcReturn * 0.5;
+                        const strcRet = Math.min(state.assetPrices.strc.dividendYield / 100, maxPrefReturn);
+                        const sataRet = Math.min(state.assetPrices.sata.dividendYield / 100, maxPrefReturn);
+                        const strcDiv = (account.currentHoldings.strc || 0) * strcRet;
+                        const sataDiv = (account.currentHoldings.sata || 0) * sataRet;
+                        const prefsByReturn = [
+                            { asset: 'strc', return: strcRet, dividends: strcDiv, principal: Math.max(0, (account.currentHoldings.strc || 0) - strcDiv) },
+                            { asset: 'sata', return: sataRet, dividends: sataDiv, principal: Math.max(0, (account.currentHoldings.sata || 0) - sataDiv) }
+                        ].sort((a, b) => a.return - b.return);
+                        const order = [
+                            { asset: prefsByReturn[0].asset, available: prefsByReturn[0].dividends },
+                            { asset: prefsByReturn[1].asset, available: prefsByReturn[1].dividends },
+                            { asset: 'cash',   available: account.currentHoldings.cash   || 0 },
+                            { asset: 'stocks', available: account.currentHoldings.stocks || 0 },
+                            { asset: prefsByReturn[0].asset, available: prefsByReturn[0].principal },
+                            { asset: prefsByReturn[1].asset, available: prefsByReturn[1].principal },
+                            { asset: 'fbtc',    available: account.currentHoldings.fbtc    || 0 },
+                            { asset: 'mstr',    available: account.currentHoldings.mstr    || 0 },
+                            { asset: 'bitcoin', available: account.currentHoldings.bitcoin || 0 }
+                        ];
+                        let withdrawn = 0;
+                        for (const item of order) {
+                            if (remaining <= 0) break;
+                            if (item.available <= 0) continue;
+                            const take = Math.min(item.available, remaining);
+                            account.currentHoldings[item.asset] = Math.max(0, (account.currentHoldings[item.asset] || 0) - take);
+                            remaining -= take;
+                            withdrawn += take;
+                        }
+                        if (calculateAccountValue(account) < 100) account.depleted = true;
+                        return withdrawn;
+                    }
+
+                    let remainingToWithdraw = totalSpendingThisIncrement;
+
+                    // Pre-pass: withdraw account-specific planned expenses from their designated account
+                    activePlannedExpenses
+                        .filter(e => e.source === 'account' && e.sourceAccountId)
+                        .forEach(expense => {
+                            const targetAcct = accountStates.find(a => a.id === expense.sourceAccountId && !a.depleted);
+                            if (targetAcct) {
+                                const acctValue = calculateAccountValue(targetAcct);
+                                const grossNeeded = Math.min(expense.resolvedAmount, acctValue);
+                                if (grossNeeded > 0) {
+                                    const actualWithdrawn = withdrawFromAccount(targetAcct, grossNeeded);
+                                    remainingToWithdraw -= actualWithdrawn;
+                                }
+                            }
+                        });
+
+                    remainingToWithdraw = Math.max(0, remainingToWithdraw);
+
                     // Get tax rates
                     const ordinaryTaxRate = state.personalInfo.ordinaryTaxRate / 100;
                     const capitalGainsTaxRate = state.personalInfo.capitalGainsTaxRate / 100;
-                    
+
                     // Smart withdrawal order
                     const withdrawalOrder = [];
                     
@@ -3083,6 +3281,17 @@
                             .sort((a, b) => getAccountGrowthScore(a) - getAccountGrowthScore(b))
                             .map(a => ({ ...a, taxType: 'taxFree' }));
                         withdrawalOrder.push(...rothAccounts);
+
+                        // HSA last-resort (not opted into retirement income) — after Roth, before BTC
+                        // After 65, HSA withdrawals for non-medical expenses are taxed as ordinary income.
+                        // If the user hasn't opted in, still use it as a final fallback so it doesn't
+                        // grow indefinitely while all other accounts are depleted.
+                        if (ageRounded >= 65) {
+                            withdrawalOrder.push(...accountStates
+                                .filter(a => !a.depleted && a.type === 'hsa' && !a.hsaIncludeAfter65)
+                                .map(a => ({ ...a, taxType: 'ordinaryIncome' }))
+                            );
+                        }
                     } else {
                         // Early withdrawal (before 59.5) - all retirement accounts get penalty + tax
                         // Still spend Traditional before Roth to preserve Roth for when it becomes tax-free at 59.5
@@ -3256,6 +3465,7 @@
                     accountValues,
                     holdings, // Add holdings to data
                     spending: spendingThisYear,
+                    plannedExpenseSpending: plannedSpendingThisIncrement,
                     withdrawalBreakdown: withdrawalBreakdown,
                     accounts: accountStates.map(a => ({
                         id: a.id,
@@ -3358,6 +3568,17 @@
 
         // Main Calculation
         function calculate() {
+            // Sync selfCustodyBTC balances — btcAmount is source of truth; balance must reflect current price
+            state.accounts.forEach(account => {
+                if (account.type === 'selfCustodyBTC' && account.btcAmount > 0) {
+                    const currentValue = account.btcAmount * state.bitcoinModel.currentPrice;
+                    account.balance = currentValue;
+                    if (account.currentAllocation) {
+                        account.currentAllocation.bitcoin = currentValue;
+                    }
+                }
+            });
+
             const { currentAge, retirementAge, annualExpenses, inflationRate } = state.personalInfo;
             const yearsToRetirement = Math.max(0, retirementAge - currentAge);
             
@@ -3755,7 +3976,7 @@
                     // Draw life expectancy line
                     if (currentAge < lifeExpectancy && x.max >= lifeExpectancy) {
                         const xPos = x.getPixelForValue(lifeExpectancy);
-                        
+
                         ctx.strokeStyle = '#ef4444'; // Red for life expectancy
                         ctx.lineWidth = 2;
                         ctx.setLineDash([3, 3]);
@@ -3763,14 +3984,48 @@
                         ctx.moveTo(xPos, top);
                         ctx.lineTo(xPos, bottom);
                         ctx.stroke();
-                        
+
                         // Label
                         ctx.fillStyle = '#ef4444';
                         ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
                         ctx.fillText('Age ' + state.personalInfo.lifeExpectancy, xPos, top - 5);
                     }
-                    
+
+                    // Draw planned expense bands (only enabled ones)
+                    ctx.setLineDash([]);
+                    (state.plannedExpenses || []).filter(e => e.enabled !== false).forEach(expense => {
+                        const expStart = expense.startAge;
+                        const expEnd = expense.startAge + (expense.duration || 1);
+                        if (x.max < expStart || x.min > expEnd) return;
+
+                        const xStart = Math.max(x.getPixelForValue(expStart), left);
+                        const xEnd = Math.min(x.getPixelForValue(expEnd), right);
+                        if (xEnd <= xStart) return;
+
+                        // Semi-transparent amber band
+                        ctx.fillStyle = 'rgba(245, 158, 11, 0.10)';
+                        ctx.fillRect(xStart, top, xEnd - xStart, bottom - top);
+
+                        // Left border
+                        ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([4, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(xStart, top);
+                        ctx.lineTo(xStart, bottom);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+
+                        // Emoji label at top of band
+                        const icon = (EXPENSE_CATEGORY_ICONS && EXPENSE_CATEGORY_ICONS[expense.category]) || '📅';
+                        const midX = (xStart + xEnd) / 2;
+                        ctx.font = '13px ' + getComputedStyle(document.body).fontFamily;
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+                        ctx.fillText(icon, midX, top + 14);
+                    });
+
                     ctx.restore();
                 }
             };
@@ -4584,6 +4839,212 @@
             } finally {
                 updateAllocationCharts.isRunning = false;
             }
+        }
+
+        // ─── Planned Expenses ────────────────────────────────────────────────────
+
+        function renderPlannedExpenses() {
+            const container = document.getElementById('expensesList');
+            if (!container) return;
+
+            const expenses = state.plannedExpenses || [];
+            if (expenses.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 3rem; color: var(--text-tertiary); grid-column: 1 / -1;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📅</div>
+                        <p>No planned expenses yet. Click <strong>+ Add Expense</strong> to model future costs like college tuition, home purchases, or healthcare.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const inflationRate = state.personalInfo.inflationRate / 100;
+            const currentAge = state.personalInfo.currentAge;
+
+            container.innerHTML = expenses.map(expense => {
+                const icon = EXPENSE_CATEGORY_ICONS[expense.category] || '📦';
+                const yearsUntil = Math.max(0, expense.startAge - currentAge);
+                const inflMult = expense.inflationAdjust ? Math.pow(1 + inflationRate, yearsUntil) : 1;
+                const adjustedAmount = expense.amount * inflMult;
+                const duration = expense.duration || 1;
+                const endAge = expense.startAge + duration;
+                const sourceBadge = expense.source === 'account'
+                    ? (() => {
+                        const acct = state.accounts.find(a => a.id === expense.sourceAccountId);
+                        return `🏦 ${acct ? acct.name : 'Deleted account'}`;
+                      })()
+                    : '🤖 Smart';
+
+                const inflNote = expense.inflationAdjust && adjustedAmount !== expense.amount
+                    ? `<div style="color: var(--accent-amber); font-size: 0.8rem; margin-top: 4px;">Inflation-adjusted: $${formatNumber(Math.round(expense.amount))} today → $${formatNumber(Math.round(adjustedAmount))}/yr at age ${expense.startAge}</div>`
+                    : '';
+
+                const isEnabled = expense.enabled ?? true;
+
+                return `
+                    <div class="account-card" style="${!isEnabled ? 'opacity: 0.5; border: 2px dashed var(--border-color);' : ''}">
+                        <div class="account-header">
+                            <div class="account-info">
+                                <div class="account-name">${icon} ${expense.label}${!isEnabled ? ' <span style="color: var(--accent-red); font-size: 0.75rem;">⏸ DISABLED</span>' : ''}</div>
+                                <span class="account-type">$${formatNumber(Math.round(adjustedAmount))}/yr &times; ${duration} year${duration > 1 ? 's' : ''} &bull; Age ${expense.startAge}${duration > 1 ? '–' + endAge : ''}</span>
+                            </div>
+                            <div class="account-actions">
+                                <button class="icon-btn" onclick="toggleExpenseEnabled('${expense.id}')" title="${isEnabled ? 'Disable' : 'Enable'}">${isEnabled ? '👁️' : '🚫'}</button>
+                                <button class="icon-btn" onclick="editExpense('${expense.id}')" title="Edit">✏️</button>
+                                <button class="icon-btn" onclick="deleteExpense('${expense.id}')" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: var(--bg-tertiary); border-radius: 999px; padding: 2px 10px; font-size: 0.8rem;">${sourceBadge}</span>
+                        </div>
+                        ${inflNote}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showAddExpenseModal() {
+            state.editingExpenseId = null;
+            document.getElementById('expenseModalTitle').textContent = 'Add Planned Expense';
+            document.getElementById('expenseLabel').value = '';
+            document.getElementById('expenseCategory').value = 'education';
+            document.getElementById('expenseAmount').value = '';
+            document.getElementById('expenseDuration').value = '1';
+            document.getElementById('expenseStartAge').value = '';
+            document.getElementById('expenseInflationAdjust').checked = true;
+            document.querySelector('input[name="expenseSource"][value="smart"]').checked = true;
+
+            // Populate account dropdown
+            const sel = document.getElementById('expenseSourceAccountId');
+            sel.innerHTML = state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+
+            updateExpenseSourceUI();
+            updateExpenseInflationPreview();
+            document.getElementById('expenseModal').classList.remove('hidden');
+            document.getElementById('expenseLabel').focus();
+        }
+
+        function editExpense(id) {
+            const expense = state.plannedExpenses.find(e => e.id === id);
+            if (!expense) return;
+
+            state.editingExpenseId = id;
+            document.getElementById('expenseModalTitle').textContent = 'Edit Planned Expense';
+            document.getElementById('expenseLabel').value = expense.label;
+            document.getElementById('expenseCategory').value = expense.category || 'other';
+            document.getElementById('expenseAmount').value = expense.amount;
+            document.getElementById('expenseDuration').value = expense.duration || 1;
+            document.getElementById('expenseStartAge').value = expense.startAge;
+            document.getElementById('expenseInflationAdjust').checked = !!expense.inflationAdjust;
+
+            const sourceRadio = document.querySelector(`input[name="expenseSource"][value="${expense.source || 'smart'}"]`);
+            if (sourceRadio) sourceRadio.checked = true;
+
+            // Populate account dropdown
+            const sel = document.getElementById('expenseSourceAccountId');
+            sel.innerHTML = state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+            if (expense.sourceAccountId) sel.value = expense.sourceAccountId;
+
+            updateExpenseSourceUI();
+            updateExpenseInflationPreview();
+            document.getElementById('expenseModal').classList.remove('hidden');
+            document.getElementById('expenseLabel').focus();
+        }
+
+        function saveExpense() {
+            const label = document.getElementById('expenseLabel').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const duration = parseInt(document.getElementById('expenseDuration').value) || 1;
+            const startAge = parseInt(document.getElementById('expenseStartAge').value);
+            const source = document.querySelector('input[name="expenseSource"]:checked')?.value || 'smart';
+            const sourceAccountId = source === 'account' ? document.getElementById('expenseSourceAccountId').value : null;
+
+            // Validate
+            if (!label) { alert('Please enter a label for this expense.'); return; }
+            if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount greater than 0.'); return; }
+            if (isNaN(startAge) || startAge < 1) { alert('Please enter a valid start age.'); return; }
+            if (duration < 1) { alert('Duration must be at least 1 year.'); return; }
+            if (source === 'account' && !sourceAccountId) { alert('Please select an account.'); return; }
+
+            // Preserve enabled state when editing
+            const existingExpense = state.editingExpenseId
+                ? state.plannedExpenses.find(e => e.id === state.editingExpenseId)
+                : null;
+
+            const expense = {
+                id: state.editingExpenseId || Date.now().toString(),
+                label,
+                category: document.getElementById('expenseCategory').value,
+                amount,
+                inflationAdjust: document.getElementById('expenseInflationAdjust').checked,
+                startAge,
+                duration,
+                source,
+                sourceAccountId,
+                enabled: existingExpense ? (existingExpense.enabled ?? true) : true
+            };
+
+            if (state.editingExpenseId) {
+                const idx = state.plannedExpenses.findIndex(e => e.id === state.editingExpenseId);
+                if (idx !== -1) state.plannedExpenses[idx] = expense;
+            } else {
+                state.plannedExpenses.push(expense);
+            }
+
+            closeExpenseModal();
+            renderPlannedExpenses();
+            calculate();
+        }
+
+        function deleteExpense(id) {
+            const expense = state.plannedExpenses.find(e => e.id === id);
+            if (!expense) return;
+            if (!confirm(`Delete "${expense.label}"?`)) return;
+            state.plannedExpenses = state.plannedExpenses.filter(e => e.id !== id);
+            renderPlannedExpenses();
+            calculate();
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').classList.add('hidden');
+            state.editingExpenseId = null;
+        }
+
+        function closeExpenseModalOnBackdrop(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                closeExpenseModal();
+            }
+        }
+
+        function toggleExpenseEnabled(id) {
+            const expense = state.plannedExpenses.find(e => e.id === id);
+            if (!expense) return;
+            expense.enabled = !(expense.enabled ?? true);
+            renderPlannedExpenses();
+            calculate();
+        }
+
+        function updateExpenseSourceUI() {
+            const source = document.querySelector('input[name="expenseSource"]:checked')?.value || 'smart';
+            document.getElementById('expenseAccountGroup').style.display = source === 'account' ? 'block' : 'none';
+        }
+
+        function updateExpenseInflationPreview() {
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const startAge = parseInt(document.getElementById('expenseStartAge').value);
+            const inflate = document.getElementById('expenseInflationAdjust').checked;
+            const preview = document.getElementById('expenseInflationPreview');
+
+            if (!preview) return;
+            if (!inflate || isNaN(amount) || isNaN(startAge)) {
+                preview.textContent = '–';
+                return;
+            }
+            const currentAge = state.personalInfo.currentAge;
+            const yearsUntil = Math.max(0, startAge - currentAge);
+            const inflationRate = state.personalInfo.inflationRate / 100;
+            const adjusted = amount * Math.pow(1 + inflationRate, yearsUntil);
+            preview.textContent = `≈ $${formatNumber(Math.round(adjusted))}/yr at age ${startAge}`;
         }
 
         // Account Management
@@ -5565,6 +6026,14 @@
                         });
                     }
                     
+                    // Ensure plannedExpenses exists (backwards compatibility)
+                    if (!state.plannedExpenses) {
+                        state.plannedExpenses = [];
+                    }
+                    if (state.editingExpenseId === undefined) {
+                        state.editingExpenseId = null;
+                    }
+
                     // Apply theme
                     if (state.theme === 'light') {
                         document.body.classList.add('light-theme');
