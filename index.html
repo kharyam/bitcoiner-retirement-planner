@@ -1545,6 +1545,36 @@
                         </label>
                         <input type="number" class="form-input" id="capitalGainsTaxRate" min="0" max="100" step="0.5" value="15">
                     </div>
+
+                    <!-- Social Security toggle — full-width row -->
+                    <div class="form-group" style="grid-column: 1 / -1; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.25rem;">
+                        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                            <input type="checkbox" id="ssEnabled" style="width: 16px; height: 16px; margin: 0;">
+                            <span class="form-label" style="margin: 0;">Taking Social Security?</span>
+                        </label>
+                        <small style="color: var(--text-tertiary); font-size: 0.8rem; margin-left: 22px;">When enabled, SS income offsets portfolio withdrawals each year.</small>
+                    </div>
+
+                    <!-- SS fields (shown when enabled) -->
+                    <div id="ssFields" style="display: none; grid-column: 1 / -1;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">SS Start Age</label>
+                                <input type="number" class="form-input" id="ssStartAge" min="62" max="70" step="1" value="67">
+                                <small style="color: var(--text-tertiary); font-size: 0.8rem;">62 – 70 typical range</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Est. Monthly Benefit ($)</label>
+                                <input type="number" class="form-input" id="ssMonthlyBenefit" min="0" step="100" value="2000">
+                                <small style="color: var(--text-tertiary); font-size: 0.8rem;">In today's dollars</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">COLA Rate (%)</label>
+                                <input type="number" class="form-input" id="ssColaRate" min="0" max="10" step="0.1" value="2.5">
+                                <small style="color: var(--text-tertiary); font-size: 0.8rem;">Annual benefit increase (US avg ≈ 2.5%)</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2414,7 +2444,13 @@
                 annualExpenses: 150000,
                 inflationRate: 3,
                 ordinaryTaxRate: 25,
-                capitalGainsTaxRate: 15
+                capitalGainsTaxRate: 15,
+                socialSecurity: {
+                    enabled: false,
+                    startAge: 67,
+                    monthlyBenefit: 2000,
+                    colaRate: 2.5
+                }
             },
             bitcoinModel: {
                 currentPrice: 100000,
@@ -2531,7 +2567,30 @@
                 state.personalInfo.capitalGainsTaxRate = parseFloat(e.target.value);
                 calculate();
             });
-            
+
+            // Social Security
+            document.getElementById('ssEnabled').addEventListener('change', (e) => {
+                if (!state.personalInfo.socialSecurity) state.personalInfo.socialSecurity = {};
+                state.personalInfo.socialSecurity.enabled = e.target.checked;
+                document.getElementById('ssFields').style.display = e.target.checked ? 'block' : 'none';
+                calculate();
+            });
+            document.getElementById('ssStartAge').addEventListener('input', (e) => {
+                if (!state.personalInfo.socialSecurity) state.personalInfo.socialSecurity = {};
+                state.personalInfo.socialSecurity.startAge = parseInt(e.target.value);
+                calculate();
+            });
+            document.getElementById('ssMonthlyBenefit').addEventListener('input', (e) => {
+                if (!state.personalInfo.socialSecurity) state.personalInfo.socialSecurity = {};
+                state.personalInfo.socialSecurity.monthlyBenefit = parseFloat(e.target.value);
+                calculate();
+            });
+            document.getElementById('ssColaRate').addEventListener('input', (e) => {
+                if (!state.personalInfo.socialSecurity) state.personalInfo.socialSecurity = {};
+                state.personalInfo.socialSecurity.colaRate = parseFloat(e.target.value);
+                calculate();
+            });
+
             // MSTR Leverage
             document.getElementById('mstrLeverage').addEventListener('input', (e) => {
                 const value = parseFloat(e.target.value);
@@ -3032,7 +3091,18 @@
                 // Apply semi-annual withdrawals (half of annual amount each time)
                 const inflationMultiplier = Math.pow(1 + inflationRate, year);
                 const annualSpending = isRetired ? annualExpenses * inflationMultiplier : 0;
-                const spendingThisYear = annualSpending * increment; // 0.5 of annual amount for 6-month period
+
+                // Social Security income offsets portfolio withdrawals
+                let ssAnnualIncome = 0;
+                const ssInfo = state.personalInfo.socialSecurity;
+                if (ssInfo && ssInfo.enabled && ageRounded >= ssInfo.startAge) {
+                    const colaRate = (ssInfo.colaRate || 2.5) / 100;
+                    // Benefits grow by COLA from today's dollars each year since currentAge
+                    ssAnnualIncome = ssInfo.monthlyBenefit * 12 * Math.pow(1 + colaRate, ageRounded - currentAge);
+                }
+
+                const netAnnualSpending = Math.max(0, annualSpending - ssAnnualIncome);
+                const spendingThisYear = netAnnualSpending * increment; // 0.5 of annual amount for 6-month period
                 
                 // Track withdrawal breakdown
                 let withdrawalBreakdown = {
@@ -3990,6 +4060,25 @@
                         ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
                         ctx.fillText('Age ' + state.personalInfo.lifeExpectancy, xPos, top - 5);
+                    }
+
+                    // Draw Social Security start age line
+                    const ssInfo = state.personalInfo.socialSecurity;
+                    if (ssInfo && ssInfo.enabled && currentAge < ssInfo.startAge && x.max >= ssInfo.startAge) {
+                        const xPos = x.getPixelForValue(ssInfo.startAge);
+
+                        ctx.strokeStyle = '#10b981'; // Green for SS income
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(xPos, top);
+                        ctx.lineTo(xPos, bottom);
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#10b981';
+                        ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
+                        ctx.textAlign = 'center';
+                        ctx.fillText('SS Age ' + ssInfo.startAge, xPos, top - 5);
                     }
 
                     // Draw planned expense bands (only enabled ones)
@@ -6034,6 +6123,16 @@
                         state.editingExpenseId = null;
                     }
 
+                    // Ensure socialSecurity exists (backwards compatibility)
+                    if (!state.personalInfo.socialSecurity) {
+                        state.personalInfo.socialSecurity = {
+                            enabled: false,
+                            startAge: 67,
+                            monthlyBenefit: 2000,
+                            colaRate: 2.5
+                        };
+                    }
+
                     // Apply theme
                     if (state.theme === 'light') {
                         document.body.classList.add('light-theme');
@@ -6059,7 +6158,18 @@
             if (document.getElementById('capitalGainsTaxRate')) {
                 document.getElementById('capitalGainsTaxRate').value = state.personalInfo.capitalGainsTaxRate || 15;
             }
-            
+
+            // Social Security fields
+            const ss = state.personalInfo.socialSecurity || {};
+            const ssEnabledEl = document.getElementById('ssEnabled');
+            if (ssEnabledEl) {
+                ssEnabledEl.checked = !!ss.enabled;
+                document.getElementById('ssFields').style.display = ss.enabled ? 'block' : 'none';
+                document.getElementById('ssStartAge').value = ss.startAge || 67;
+                document.getElementById('ssMonthlyBenefit').value = ss.monthlyBenefit || 2000;
+                document.getElementById('ssColaRate').value = ss.colaRate !== undefined ? ss.colaRate : 2.5;
+            }
+
             document.getElementById('btcPrice').value = state.bitcoinModel.currentPrice;
             
             // Update asset parameters (only used ones)
