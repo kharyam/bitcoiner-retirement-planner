@@ -500,10 +500,11 @@
         }
         
         .help-tooltip {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(-8px);
+            /* position: fixed escapes all ancestor stacking contexts so the
+               tooltip always renders above every card/section on the page.
+               top/left are set by initTooltipPositioning() on mouseenter. */
+            position: fixed;
+            transform: translateX(-50%);
             background: var(--bg-primary);
             border: 2px solid var(--bitcoin-orange);
             border-radius: 8px;
@@ -514,27 +515,16 @@
             z-index: 99999;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s ease, transform 0.2s ease;
+            transition: opacity 0.2s ease;
             white-space: normal;
         }
-        
-        /* Flip tooltip down when it would be cut off at top */
-        .help-icon.flip-down .help-tooltip {
-            bottom: auto;
-            top: 100%;
-            transform: translateX(-50%) translateY(8px);
-        }
-        
-        .help-icon:hover .help-tooltip {
+
+        /* Shown via JS after portaling to body */
+        .help-tooltip.tooltip-visible {
             opacity: 1;
-            transform: translateX(-50%) translateY(-12px);
             pointer-events: auto;
         }
-        
-        .help-icon.flip-down:hover .help-tooltip {
-            transform: translateX(-50%) translateY(12px);
-        }
-        
+
         .help-tooltip::after {
             content: '';
             position: absolute;
@@ -545,9 +535,9 @@
             border-top-color: var(--bitcoin-orange);
             z-index: 100000;
         }
-        
-        /* Flip arrow to point upward when tooltip is below */
-        .help-icon.flip-down .help-tooltip::after {
+
+        /* Flip arrow to point upward when tooltip is below the icon */
+        .help-tooltip.flip-down::after {
             top: auto;
             bottom: 100%;
             border-top-color: transparent;
@@ -5716,8 +5706,12 @@
 
         // Scroll-triggered animation for account summary
         let summaryAnimated = false;
+        let summaryScrollObserver = null;
         function setupScrollAnimations() {
-            const observer = new IntersectionObserver((entries) => {
+            if (summaryScrollObserver) {
+                summaryScrollObserver.disconnect();
+            }
+            summaryScrollObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && !summaryAnimated) {
                         summaryAnimated = true;
@@ -5734,7 +5728,7 @@
 
             const summaryContainer = document.getElementById('accountSummaryContent');
             if (summaryContainer) {
-                observer.observe(summaryContainer);
+                summaryScrollObserver.observe(summaryContainer);
             }
         }
 
@@ -6355,36 +6349,52 @@
             });
         }
         
-        // Check position on hover for each help icon
+        // Portal every tooltip to <body> so position:fixed is always
+        // viewport-relative, regardless of ancestor CSS transforms or filters.
         function initTooltipPositioning() {
             document.querySelectorAll('.help-icon').forEach(icon => {
+                if (icon.dataset.tooltipInit) return;
+                icon.dataset.tooltipInit = '1';
+
+                const tooltip = icon.querySelector('.help-tooltip');
+                if (!tooltip) return;
+
+                // Move out of any stacking/transform context
+                document.body.appendChild(tooltip);
+
                 icon.addEventListener('mouseenter', function() {
                     const rect = this.getBoundingClientRect();
-                    const tooltipHeight = 400; // VERY aggressive threshold
-                    
-                    if (rect.top < tooltipHeight) {
-                        this.classList.add('flip-down');
+                    const tipHeight = tooltip.offsetHeight || 200;
+                    const tipWidth  = tooltip.offsetWidth  || 270;
+                    const gap = 10;
+
+                    // Prefer showing above; flip below only when not enough room
+                    let top;
+                    if (rect.top >= tipHeight + gap + 8) {
+                        top = rect.top - tipHeight - gap;
+                        tooltip.classList.remove('flip-down');
                     } else {
-                        this.classList.remove('flip-down');
+                        top = rect.bottom + gap;
+                        tooltip.classList.add('flip-down');
                     }
+
+                    // Center on the icon, clamped to stay within the viewport
+                    const centerX = rect.left + rect.width / 2;
+                    const left = Math.min(
+                        Math.max(centerX, tipWidth / 2 + 8),
+                        window.innerWidth - tipWidth / 2 - 8
+                    );
+
+                    tooltip.style.top  = top  + 'px';
+                    tooltip.style.left = left + 'px';
+                    tooltip.classList.add('tooltip-visible');
+                });
+
+                icon.addEventListener('mouseleave', function() {
+                    tooltip.classList.remove('tooltip-visible');
                 });
             });
         }
-        
-        // Run on modal open and scroll
-        const modalObserver = new MutationObserver(() => {
-            setTimeout(() => {
-                positionTooltips();
-                initTooltipPositioning();
-            }, 100); // Small delay for modal animation
-        });
-        
-        modalObserver.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['class']
-        });
         
         window.addEventListener('scroll', positionTooltips);
         window.addEventListener('resize', positionTooltips);
