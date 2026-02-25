@@ -490,11 +490,13 @@
             height: 18px;
             transition: all 0.2s ease;
             opacity: 0.7;
+            z-index: 1;
         }
         
         .help-icon:hover {
             opacity: 1;
             transform: scale(1.1);
+            z-index: 100000;
         }
         
         .help-tooltip {
@@ -1822,7 +1824,7 @@
                     <button class="chart-tab" onclick="switchChartTab('allocation')">Allocation</button>
                 </div>
                 
-                <div id="overviewChart" class="chart-container">
+                <div id="overviewChart" class="chart-container" style="height: 580px; display: flex; flex-direction: column;">
                     <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
                         <button class="btn btn-secondary" id="viewByAccount" onclick="switchOverviewView('account')" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: var(--bitcoin-orange); border-color: var(--bitcoin-orange);">
                             By Account
@@ -1834,7 +1836,37 @@
                             By Tax Treatment
                         </button>
                     </div>
-                    <canvas id="portfolioChart"></canvas>
+                    <!-- Dual-handle range slider for chart zoom -->
+                    <div style="padding: 0.25rem 0.5rem 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                            <label style="font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Chart Range:</label>
+                            <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-mono);">
+                                Age <span id="overviewStartAgeLabel" style="color: #10b981;">49</span>&thinsp;—&thinsp;<span id="overviewEndAgeLabel" style="color: #ef4444;">100</span>
+                            </span>
+                        </div>
+                        <div id="overviewRangeTrack"
+                             style="position: relative; height: 28px; cursor: pointer; user-select: none;"
+                             onmousedown="overviewRangeMouseDown(event)"
+                             ontouchstart="overviewRangeTouchStart(event)">
+                            <!-- Background track -->
+                            <div style="position: absolute; top: 50%; left: 0; right: 0; height: 6px; transform: translateY(-50%); background: var(--bg-tertiary); border-radius: 3px; pointer-events: none;">
+                                <!-- Filled region between handles -->
+                                <div id="overviewRangeFill" style="position: absolute; height: 100%; background: rgba(247,147,26,0.35); border-radius: 3px;"></div>
+                            </div>
+                            <!-- Green start handle -->
+                            <div id="overviewStartHandle"
+                                 style="position: absolute; top: 50%; width: 18px; height: 18px; transform: translate(-50%, -50%);
+                                        background: #10b981; border-radius: 50%; border: 2px solid white;
+                                        box-shadow: 0 1px 4px rgba(0,0,0,0.45); pointer-events: none; z-index: 2;"></div>
+                            <!-- Red end handle -->
+                            <div id="overviewEndHandle"
+                                 style="position: absolute; top: 50%; width: 18px; height: 18px; transform: translate(-50%, -50%);
+                                        background: #ef4444; border-radius: 50%; border: 2px solid white;
+                                        box-shadow: 0 1px 4px rgba(0,0,0,0.45); pointer-events: none; z-index: 2;"></div>
+                        </div>
+                        <div id="overviewRangeTicks" style="display: flex; justify-content: space-between; margin-top: 0.25rem; font-size: 0.72rem; color: var(--text-tertiary);"></div>
+                    </div>
+                    <canvas id="portfolioChart" style="flex: 1; min-height: 0;"></canvas>
                 </div>
                 
                 <div id="incomeChart" class="chart-container hidden">
@@ -2304,7 +2336,8 @@
             charts: {},
             overviewViewMode: 'account', // 'account', 'asset', or 'tax'
             gapShortfallInfo: { hasShortfall: false }, // Track gap period shortfall for chart overlay
-            allocationYear: 0 // Year to display in allocation pie charts (0 = current)
+            allocationYear: 0, // Year to display in allocation pie charts (0 = current)
+            chartRange: null // {startAge, endAge} for overview chart; null = full range
         };
 
         // Asset Colors - distinct palette for easy chart readability
@@ -3543,6 +3576,13 @@
                 status = '❌ Gap Shortfall';
                 statusClass = 'status-danger';
                 statusDetail = `Need $${formatNumber(Math.abs(gapSurplus))} more for early retirement`;
+            } else if (yearsOfSustainability >= 60) {
+                // Portfolio lasts the full 60-year simulation — on track even if snapshot is below target
+                status = '✅ On Track';
+                statusClass = 'status-success';
+                statusDetail = foreverSurplus > 0
+                    ? `Surplus: $${formatNumber(foreverSurplus)}`
+                    : `Growth outpaces withdrawals past 59.5`;
             } else if (foreverSurplus > foreverNumber * 0.2) {
                 status = '✅ On Track';
                 statusClass = 'status-success';
@@ -4061,7 +4101,8 @@
                             })),
                             borderColor: Object.values(ASSET_COLORS)[index % 7],
                             backgroundColor: Object.values(ASSET_COLORS)[index % 7] + '40',
-                            fill: true
+                            fill: true,
+                            cubicInterpolationMode: 'monotone'
                         };
                     });
                     
@@ -4085,7 +4126,8 @@
                             }),
                             borderColor: ASSET_COLORS[asset],
                             backgroundColor: ASSET_COLORS[asset] + '40',
-                            fill: true
+                            fill: true,
+                            cubicInterpolationMode: 'monotone'
                         };
                     }).filter(dataset => {
                         // Only include assets that have non-zero values
@@ -4123,7 +4165,8 @@
                             }),
                             borderColor: taxColors[label],
                             backgroundColor: taxColors[label] + '40',
-                            fill: true
+                            fill: true,
+                            cubicInterpolationMode: 'monotone'
                         };
                     }).filter(dataset => {
                         // Only include categories that have non-zero values
@@ -4132,8 +4175,19 @@
                 }
                 
                 state.charts.portfolio.data.datasets = datasets;
+
+                // Apply overview range filter (dual-handle slider)
+                updateOverviewRangeSlider();
+                const xScale = state.charts.portfolio.options.scales.x;
+                if (state.chartRange) {
+                    xScale.min = state.chartRange.startAge;
+                    xScale.max = state.chartRange.endAge;
+                } else {
+                    delete xScale.min;
+                    delete xScale.max;
+                }
                 state.charts.portfolio.update('none');
-                
+
                 // Withdrawal/Income Chart - shows inflation-adjusted spending with tax breakdown
                 // Aggregate semi-annual data into annual totals for cleaner visualization
                 const cashData = [];
@@ -4275,11 +4329,130 @@
             }
         };
         
+        // ── Overview dual-handle range slider ──────────────────────────────────
+
+        function updateOverviewRangeSlider() {
+            const currentAge = state.personalInfo.currentAge;
+            const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
+
+            // Initialise chartRange to full span on first call
+            if (!state.chartRange) {
+                state.chartRange = { startAge: currentAge, endAge: lifeExpectancy };
+            }
+
+            // Clamp values to valid range
+            state.chartRange.startAge = Math.max(currentAge, Math.min(state.chartRange.startAge, lifeExpectancy - 1));
+            state.chartRange.endAge   = Math.max(state.chartRange.startAge + 1, Math.min(state.chartRange.endAge, lifeExpectancy));
+
+            const trackEl       = document.getElementById('overviewRangeTrack');
+            const startHandle   = document.getElementById('overviewStartHandle');
+            const endHandle     = document.getElementById('overviewEndHandle');
+            const fill          = document.getElementById('overviewRangeFill');
+            const startLabel    = document.getElementById('overviewStartAgeLabel');
+            const endLabel      = document.getElementById('overviewEndAgeLabel');
+            const ticksEl       = document.getElementById('overviewRangeTicks');
+
+            if (!trackEl || !startHandle) return;
+
+            const totalRange = lifeExpectancy - currentAge;
+            const startPct   = totalRange > 0 ? (state.chartRange.startAge - currentAge) / totalRange * 100 : 0;
+            const endPct     = totalRange > 0 ? (state.chartRange.endAge   - currentAge) / totalRange * 100 : 100;
+
+            startHandle.style.left = startPct + '%';
+            endHandle.style.left   = endPct   + '%';
+            fill.style.left        = startPct + '%';
+            fill.style.width       = (endPct - startPct) + '%';
+
+            if (startLabel) startLabel.textContent = state.chartRange.startAge;
+            if (endLabel)   endLabel.textContent   = state.chartRange.endAge;
+
+            // Rebuild ticks (every 10 years, always include last)
+            if (ticksEl) {
+                const ticks = [];
+                for (let age = currentAge; age <= lifeExpectancy; age += 10) {
+                    ticks.push(`<span>${age}</span>`);
+                }
+                if ((lifeExpectancy - currentAge) % 10 !== 0) {
+                    ticks.push(`<span>${lifeExpectancy}</span>`);
+                }
+                ticksEl.innerHTML = ticks.join('');
+            }
+        }
+
+        // Drag state (closure so event listeners can share it)
+        (function() {
+            let dragging = null; // 'start' | 'end'
+
+            function ageFromPointer(e, trackEl) {
+                const rect    = trackEl.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const pct     = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                const currentAge     = state.personalInfo.currentAge;
+                const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
+                return Math.round(currentAge + pct * (lifeExpectancy - currentAge));
+            }
+
+            function startDrag(e) {
+                const trackEl = document.getElementById('overviewRangeTrack');
+                if (!trackEl || !state.chartRange) return;
+                const age       = ageFromPointer(e, trackEl);
+                const startDist = Math.abs(age - state.chartRange.startAge);
+                const endDist   = Math.abs(age - state.chartRange.endAge);
+                dragging = (startDist <= endDist) ? 'start' : 'end';
+                e.preventDefault();
+            }
+
+            function onMove(e) {
+                if (!dragging) return;
+                if (e.cancelable) e.preventDefault();
+                const trackEl        = document.getElementById('overviewRangeTrack');
+                if (!trackEl) return;
+                const age            = ageFromPointer(e, trackEl);
+                const currentAge     = state.personalInfo.currentAge;
+                const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
+                if (dragging === 'start') {
+                    state.chartRange.startAge = Math.max(currentAge, Math.min(age, state.chartRange.endAge - 1));
+                } else {
+                    state.chartRange.endAge = Math.min(lifeExpectancy, Math.max(age, state.chartRange.startAge + 1));
+                }
+                updateOverviewRangeSlider();
+                // Update chart x-axis limits live
+                if (state.charts.portfolio) {
+                    const xScale = state.charts.portfolio.options.scales.x;
+                    xScale.min = state.chartRange.startAge;
+                    xScale.max = state.chartRange.endAge;
+                    state.charts.portfolio.update('none');
+                }
+            }
+
+            function onEnd() {
+                dragging = null;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onEnd);
+            }
+
+            window.overviewRangeMouseDown = function(e) {
+                startDrag(e);
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onEnd);
+            };
+
+            window.overviewRangeTouchStart = function(e) {
+                startDrag(e);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd);
+            };
+        })();
+
+        // ── End overview range slider ──────────────────────────────────────────
+
         // Update allocation slider range and tick marks
         function updateAllocationSlider() {
             const currentAge = state.personalInfo.currentAge;
             const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
-            const maxYears = Math.min(50, lifeExpectancy - currentAge);
+            const maxYears = lifeExpectancy - currentAge;
 
             const slider = document.getElementById('allocationAgeSlider');
             if (slider) {
@@ -5259,7 +5432,7 @@
         function updateSummarySlider() {
             const currentAge = state.personalInfo.currentAge;
             const lifeExpectancy = state.personalInfo.lifeExpectancy || 95;
-            const maxYears = Math.min(50, lifeExpectancy - currentAge);
+            const maxYears = lifeExpectancy - currentAge;
 
             const slider = document.getElementById('summaryAgeSlider');
             if (slider) {
