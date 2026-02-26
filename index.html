@@ -3216,6 +3216,9 @@
 
                 const totalSpendingThisIncrement = spendingThisYear + plannedSpendingThisIncrement;
 
+                // Per-expense attribution map (populated below, saved to yearlyData)
+                const plannedExpenseDetailsMap = {};
+
                 if (totalSpendingThisIncrement > 0) {
                     // Helper: withdraw from a specific account using within-account asset order
                     const withdrawFromAccount = (account, grossAmount) => {
@@ -3267,8 +3270,30 @@
                                 if (grossNeeded > 0) {
                                     const actualWithdrawn = withdrawFromAccount(targetAcct, grossNeeded);
                                     remainingToWithdraw -= actualWithdrawn;
+                                    plannedExpenseDetailsMap[expense.id] = {
+                                        label: expense.label,
+                                        resolvedAmount: expense.resolvedAmount,
+                                        source: 'designated',
+                                        accountId: targetAcct.id,
+                                        accountName: targetAcct.name,
+                                        accountBalanceAfter: calculateAccountValue(targetAcct)
+                                    };
                                 }
                             }
+                        });
+
+                    // Track smart-order expenses (those not already handled above)
+                    activePlannedExpenses
+                        .filter(e => !plannedExpenseDetailsMap[e.id])
+                        .forEach(expense => {
+                            plannedExpenseDetailsMap[expense.id] = {
+                                label: expense.label,
+                                resolvedAmount: expense.resolvedAmount,
+                                source: 'smart',
+                                accountId: null,
+                                accountName: null,
+                                accountBalanceAfter: null
+                            };
                         });
 
                     remainingToWithdraw = Math.max(0, remainingToWithdraw);
@@ -3375,6 +3400,7 @@
                     );
                     
                     // Withdraw from accounts in order
+                    const smartWithdrawalLog = [];
                     for (const withdrawalAccount of withdrawalOrder) {
                         if (remainingToWithdraw <= 0) break;
                         
@@ -3497,15 +3523,32 @@
                             }
                             
                             remainingToWithdraw -= netReceived;
-                            
+
+                            // Record this account's contribution to smart withdrawal log
+                            smartWithdrawalLog.push({
+                                accountId: account.id,
+                                accountName: account.name,
+                                netWithdrawn: netReceived,
+                                balanceAfter: calculateAccountValue(account)
+                            });
+
                             // Mark as depleted if essentially empty
                             if (calculateAccountValue(account) < 100) {
                                 account.depleted = true;
                             }
                         }
                     }
+
+                    // Attach smart withdrawal accounts to all smart-order expense details
+                    if (smartWithdrawalLog.length > 0) {
+                        Object.values(plannedExpenseDetailsMap).forEach(detail => {
+                            if (detail.source === 'smart') {
+                                detail.smartAccounts = smartWithdrawalLog;
+                            }
+                        });
+                    }
                 }
-                
+
                 // Calculate total portfolio value
                 let totalValue = 0;
                 const accountValues = {};
@@ -3528,6 +3571,7 @@
                     holdings, // Add holdings to data
                     spending: spendingThisYear,
                     plannedExpenseSpending: plannedSpendingThisIncrement,
+                    plannedExpenseDetails: plannedExpenseDetailsMap,
                     withdrawalBreakdown: withdrawalBreakdown,
                     accounts: accountStates.map(a => ({
                         id: a.id,
@@ -4108,6 +4152,68 @@
                         ctx.fillText(icon, midX, top + 14);
                     });
 
+                    // Option B: Draw account drop markers on the portfolio chart for each planned expense
+                    // Shows which account is drawn from, and at which age
+                    const projData = state.lastProjectionData;
+                    if (projData && chart.data && chart.data.datasets && chart.data.datasets.length > 0) {
+                        (state.plannedExpenses || []).filter(e => e.enabled !== false).forEach(expense => {
+                            const expStart = expense.startAge;
+                            const expEnd = expense.startAge + (expense.duration || 1);
+
+                            // Find whole-year projection entries within the expense age window
+                            const relevantEntries = projData.filter(d =>
+                                d.age % 1 === 0 &&
+                                d.age >= expStart &&
+                                d.age < expEnd &&
+                                d.plannedExpenseDetails &&
+                                d.plannedExpenseDetails[expense.id]
+                            );
+
+                            relevantEntries.forEach(d => {
+                                const detail = d.plannedExpenseDetails[expense.id];
+                                const xPx = x.getPixelForValue(d.age);
+                                if (xPx < left || xPx > right) return;
+
+                                let yPx;
+                                if (detail.source === 'designated' && detail.accountId) {
+                                    // Find the dataset index for this account using Chart.js public API
+                                    const dsIndex = chart.data.datasets.findIndex(ds => {
+                                        const acct = (state.accounts || []).find(a => a.name === ds.label);
+                                        return acct && acct.id === detail.accountId;
+                                    });
+                                    if (dsIndex >= 0) {
+                                        const meta = chart.getDatasetMeta(dsIndex);
+                                        if (meta && meta.data) {
+                                            // Find the point closest to this age
+                                            const dsData = chart.data.datasets[dsIndex].data;
+                                            const ptIndex = dsData.findIndex(pt => Math.abs((pt.x || 0) - d.age) < 0.3);
+                                            if (ptIndex >= 0 && meta.data[ptIndex]) {
+                                                yPx = meta.data[ptIndex].y;
+                                            }
+                                        }
+                                    }
+                                }
+                                // Fallback: draw marker at the bottom of the chart area
+                                if (yPx == null) yPx = bottom - 4;
+
+                                // Draw downward triangle marker (amber)
+                                const markerSize = 6;
+                                ctx.beginPath();
+                                ctx.moveTo(xPx, yPx + markerSize * 2);
+                                ctx.lineTo(xPx - markerSize, yPx);
+                                ctx.lineTo(xPx + markerSize, yPx);
+                                ctx.closePath();
+                                ctx.fillStyle = detail.source === 'designated'
+                                    ? 'rgba(245, 158, 11, 0.9)'
+                                    : 'rgba(245, 158, 11, 0.55)';
+                                ctx.fill();
+                                ctx.strokeStyle = '#b45309';
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+                            });
+                        });
+                    }
+
                     ctx.restore();
                 }
             };
@@ -4233,6 +4339,13 @@
                             backgroundColor: 'rgba(239, 68, 68, 0.8)',
                             borderColor: '#ef4444',
                             borderWidth: 1
+                        },
+                        {
+                            label: 'Planned Expenses',
+                            data: [],
+                            backgroundColor: 'rgba(251, 191, 36, 0.85)',
+                            borderColor: '#fbbf24',
+                            borderWidth: 1.5
                         }
                     ]
                 },
@@ -4248,9 +4361,18 @@
                             mode: 'index',
                             callbacks: {
                                 footer: function(tooltipItems) {
-                                    let total = 0;
-                                    tooltipItems.forEach(item => total += item.parsed.y);
-                                    return 'Total: $' + formatNumber(total);
+                                    // Total = sum of regular spending items (indices 0-3, not the planned expense bar index 4)
+                                    let regularTotal = 0;
+                                    let plannedTotal = 0;
+                                    tooltipItems.forEach((item, i) => {
+                                        if (item.dataset.label === 'Planned Expenses') plannedTotal += item.parsed.y;
+                                        else regularTotal += item.parsed.y;
+                                    });
+                                    const grandTotal = regularTotal + plannedTotal;
+                                    if (plannedTotal > 0 && regularTotal > 0) {
+                                        return 'Planned: $' + formatNumber(plannedTotal) + '\nTotal: $' + formatNumber(grandTotal);
+                                    }
+                                    return 'Total: $' + formatNumber(grandTotal);
                                 }
                             }
                         }
@@ -4376,6 +4498,121 @@
                     }
                 }
             });
+
+            // Option C: Hover tooltip on amber expense bands
+            // Create a shared floating tooltip element
+            const expenseBandTooltip = document.createElement('div');
+            expenseBandTooltip.id = 'expenseBandTooltip';
+            expenseBandTooltip.style.cssText = [
+                'position:fixed',
+                'display:none',
+                'background:var(--bg-secondary,#1e293b)',
+                'color:var(--text-primary,#f1f5f9)',
+                'border:1.5px solid rgba(245,158,11,0.6)',
+                'border-radius:10px',
+                'padding:10px 14px',
+                'font-size:0.82rem',
+                'line-height:1.5',
+                'box-shadow:0 4px 18px rgba(0,0,0,0.35)',
+                'pointer-events:none',
+                'z-index:9999',
+                'max-width:260px'
+            ].join(';');
+            document.body.appendChild(expenseBandTooltip);
+
+            function showExpenseBandTooltip(event, canvas, chart) {
+                const expenses = (state.plannedExpenses || []).filter(e => e.enabled !== false);
+                if (!expenses.length || !chart || !chart.scales || !chart.scales.x) {
+                    expenseBandTooltip.style.display = 'none';
+                    return;
+                }
+                const rect = canvas.getBoundingClientRect();
+                const offsetX = event.clientX - rect.left;
+                const x = chart.scales.x;
+                const ageAtCursor = x.getValueForPixel(offsetX);
+
+                const matchedExpense = expenses.find(e => {
+                    const expStart = e.startAge;
+                    const expEnd = e.startAge + (e.duration || 1);
+                    return ageAtCursor >= expStart && ageAtCursor < expEnd;
+                });
+
+                if (!matchedExpense) {
+                    expenseBandTooltip.style.display = 'none';
+                    return;
+                }
+
+                const icon = (EXPENSE_CATEGORY_ICONS && EXPENSE_CATEGORY_ICONS[matchedExpense.category]) || '📅';
+                const inflationRate = state.personalInfo.inflationRate / 100;
+                const currentAge = state.personalInfo.currentAge;
+                const yearsUntilStart = Math.max(0, matchedExpense.startAge - currentAge);
+                const inflMult = matchedExpense.inflationAdjust ? Math.pow(1 + inflationRate, yearsUntilStart) : 1;
+                const annualAmount = matchedExpense.amount * inflMult;
+                const duration = matchedExpense.duration || 1;
+                const endAge = matchedExpense.startAge + duration;
+
+                // Determine source info
+                let sourceHtml = '';
+                if (matchedExpense.source === 'account' && matchedExpense.sourceAccountId) {
+                    const acct = state.accounts.find(a => a.id === matchedExpense.sourceAccountId);
+                    const acctName = acct ? acct.name : 'Deleted account';
+                    // Find projected balance of that account at start of expense
+                    let balAtStart = null;
+                    if (state.lastProjectionData) {
+                        const startEntry = state.lastProjectionData.find(d =>
+                            Math.abs(d.age - matchedExpense.startAge) < 0.6 && d.age % 1 === 0
+                        );
+                        if (startEntry && startEntry.accountValues) {
+                            balAtStart = startEntry.accountValues[matchedExpense.sourceAccountId];
+                        }
+                    }
+                    sourceHtml = `<div style="margin-top:5px">🏦 <strong>From:</strong> ${acctName}`;
+                    if (balAtStart != null) {
+                        sourceHtml += `<br><span style="color:var(--accent-amber,#f59e0b);font-size:0.78rem">Balance at age ${matchedExpense.startAge}: $${formatNumber(Math.round(balAtStart))}</span>`;
+                    }
+                    sourceHtml += `</div>`;
+                } else {
+                    // Look up actual accounts used at the expense start age
+                    const startEntry = state.lastProjectionData &&
+                        state.lastProjectionData.find(d => Math.abs(d.age - matchedExpense.startAge) < 0.6 && d.age % 1 === 0);
+                    const detail = startEntry && startEntry.plannedExpenseDetails && startEntry.plannedExpenseDetails[matchedExpense.id];
+                    const smartAccts = (detail && detail.smartAccounts || []).filter(a => a.netWithdrawn > 0);
+                    if (smartAccts.length > 0) {
+                        const names = smartAccts.map(a => a.accountName).join(', ');
+                        sourceHtml = `<div style="margin-top:5px">🤖 <strong>From:</strong> ${names}</div>`;
+                    } else {
+                        sourceHtml = `<div style="margin-top:5px">🤖 <strong>Source:</strong> Smart withdrawal order</div>`;
+                    }
+                }
+
+                expenseBandTooltip.innerHTML = `
+                    <div style="font-weight:700;font-size:0.88rem;margin-bottom:2px">${icon} ${matchedExpense.label}</div>
+                    <div style="color:var(--accent-amber,#f59e0b)">$${formatNumber(Math.round(annualAmount))}/yr &times; ${duration} yr${duration > 1 ? 's' : ''}</div>
+                    <div style="font-size:0.78rem;color:var(--text-tertiary,#94a3b8)">Age ${matchedExpense.startAge}${duration > 1 ? '–' + endAge : ''}</div>
+                    ${sourceHtml}
+                `.trim();
+
+                // Position tooltip near cursor (avoid off-screen)
+                const tx = Math.min(event.clientX + 14, window.innerWidth - 275);
+                const ty = Math.max(event.clientY - 80, 8);
+                expenseBandTooltip.style.left = tx + 'px';
+                expenseBandTooltip.style.top = ty + 'px';
+                expenseBandTooltip.style.display = 'block';
+            }
+
+            function hideExpenseBandTooltip() {
+                expenseBandTooltip.style.display = 'none';
+            }
+
+            // Attach to portfolio chart canvas
+            const portfolioCanvas = document.getElementById('portfolioChart');
+            if (portfolioCanvas) {
+                portfolioCanvas.addEventListener('mousemove', (e) => {
+                    showExpenseBandTooltip(e, portfolioCanvas, state.charts.portfolio);
+                });
+                portfolioCanvas.addEventListener('mouseleave', hideExpenseBandTooltip);
+            }
+
         }
 
         // Update Charts
@@ -4391,6 +4628,7 @@
                     state.charts.withdrawal.data.datasets[1].data = [];
                     state.charts.withdrawal.data.datasets[2].data = [];
                     state.charts.withdrawal.data.datasets[3].data = [];
+                    state.charts.withdrawal.data.datasets[4].data = [];
                     state.charts.withdrawal.update('none');
                 }
                 
@@ -4414,7 +4652,9 @@
                 // Use withdrawal modeling for realistic projections - only enabled accounts
                 const enabledAccounts = state.accounts.filter(a => a.enabled !== false);
                 const projectionData = projectAccountWithWithdrawals(enabledAccounts, yearsToProject);
-                
+                // Store for use by chart plugin (markers), hover tooltips, and expense cards
+                state.lastProjectionData = projectionData;
+
                 if (projectionData.length === 0) {
                     console.warn('No projection data generated');
                     return;
@@ -4531,26 +4771,30 @@
                 const taxFreeData = [];
                 const capitalGainsData = [];
                 const ordinaryIncomeData = [];
-                
+                const plannedExpenseData = [];
+
                 let yearAccumulator = null;
                 let cashAccum = 0;
                 let taxFreeAccum = 0;
                 let capitalGainsAccum = 0;
                 let ordinaryIncomeAccum = 0;
+                let plannedExpenseAccum = 0;
                 let countPerAge = 0; // Track half-year periods per age bucket
 
                 projectionData.forEach((d) => {
-                    if (d.spending > 0) {
+                    // Include pre-retirement entries that have planned expense spending
+                    if (d.spending > 0 || d.plannedExpenseSpending > 0) {
                         const wholeAge = Math.floor(d.age);
 
                         // Start accumulating for a new age
                         if (yearAccumulator !== wholeAge) {
                             // Push previous age's data if exists
-                            if (yearAccumulator !== null && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0)) {
+                            if (yearAccumulator !== null && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0 || plannedExpenseAccum > 0)) {
                                 cashData.push({ x: yearAccumulator, y: cashAccum });
                                 taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum });
                                 capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum });
                                 ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum });
+                                plannedExpenseData.push({ x: yearAccumulator, y: plannedExpenseAccum });
                             }
 
                             // Reset for new age
@@ -4559,36 +4803,49 @@
                             taxFreeAccum = 0;
                             capitalGainsAccum = 0;
                             ordinaryIncomeAccum = 0;
+                            plannedExpenseAccum = 0;
                             countPerAge = 0;
                         }
 
-                        // Accumulate this period's withdrawals
-                        cashAccum += d.withdrawalBreakdown.cash || 0;
-                        taxFreeAccum += d.withdrawalBreakdown.taxFree;
-                        capitalGainsAccum += d.withdrawalBreakdown.capitalGains;
-                        ordinaryIncomeAccum += d.withdrawalBreakdown.ordinaryIncome;
+                        // Accumulate planned expense spending (all ages)
+                        plannedExpenseAccum += d.plannedExpenseSpending || 0;
+
+                        // Accumulate regular spending breakdown, scaled to exclude planned expenses
+                        // This ensures the stacked bars correctly represent: regular + planned = total
+                        if (d.spending > 0) {
+                            const totalThisIncrement = (d.spending || 0) + (d.plannedExpenseSpending || 0);
+                            const regularFraction = totalThisIncrement > 0 ? d.spending / totalThisIncrement : 1;
+                            cashAccum += (d.withdrawalBreakdown.cash || 0) * regularFraction;
+                            taxFreeAccum += d.withdrawalBreakdown.taxFree * regularFraction;
+                            capitalGainsAccum += d.withdrawalBreakdown.capitalGains * regularFraction;
+                            ordinaryIncomeAccum += d.withdrawalBreakdown.ordinaryIncome * regularFraction;
+                        }
                         countPerAge++;
                     }
                 });
 
                 // Flush any remaining accumulated data after the loop
-                if (yearAccumulator !== null && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0)) {
+                if (yearAccumulator !== null && (cashAccum > 0 || taxFreeAccum > 0 || capitalGainsAccum > 0 || ordinaryIncomeAccum > 0 || plannedExpenseAccum > 0)) {
                     // Scale ×2 if only one half-year was recorded (projection loop truncated at year boundary)
                     const scale = countPerAge === 1 ? 2 : 1;
                     cashData.push({ x: yearAccumulator, y: cashAccum * scale });
                     taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum * scale });
                     capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum * scale });
                     ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum * scale });
+                    plannedExpenseData.push({ x: yearAccumulator, y: plannedExpenseAccum * scale });
                 }
-                
+
                 state.charts.withdrawal.data.datasets[0].data = cashData;
                 state.charts.withdrawal.data.datasets[1].data = taxFreeData;
                 state.charts.withdrawal.data.datasets[2].data = capitalGainsData;
                 state.charts.withdrawal.data.datasets[3].data = ordinaryIncomeData;
+                state.charts.withdrawal.data.datasets[4].data = plannedExpenseData;
                 state.charts.withdrawal.update('none');
                 
                 // Update allocation charts separately (respects state.allocationYear)
                 updateAllocationCharts();
+                // Refresh expense cards so year-by-year tables show updated projection data
+                renderPlannedExpenses();
             } catch (error) {
                 console.error('Error updating charts:', error);
             }
@@ -4948,6 +5205,8 @@
             const inflationRate = state.personalInfo.inflationRate / 100;
             const currentAge = state.personalInfo.currentAge;
 
+            const calendarYearBase = new Date().getFullYear();
+
             container.innerHTML = expenses.map(expense => {
                 const icon = EXPENSE_CATEGORY_ICONS[expense.category] || '📦';
                 const yearsUntil = Math.max(0, expense.startAge - currentAge);
@@ -4968,6 +5227,74 @@
 
                 const isEnabled = expense.enabled ?? true;
 
+                // Option D: Build year-by-year breakdown table from lastProjectionData
+                let yearlyTable = '';
+                const projData = state.lastProjectionData;
+                if (projData && projData.length > 0) {
+                    const rows = projData
+                        .filter(d => d.age % 1 === 0 && d.age >= expense.startAge && d.age < endAge)
+                        .map(d => {
+                            const detail = d.plannedExpenseDetails && d.plannedExpenseDetails[expense.id];
+                            if (!detail) return '';
+                            // resolvedAmount is the half-year amount; annual = ×2
+                            const annualAmt = detail.resolvedAmount * 2;
+                            const ageNum = Math.round(d.age);
+                            const calYear = calendarYearBase + (ageNum - currentAge);
+                            let sourceTd, balTd;
+                            if (detail.source === 'designated') {
+                                const isDepleted = detail.accountBalanceAfter != null && detail.accountBalanceAfter < 100;
+                                sourceTd = `<td style="padding:3px 8px;color:var(--accent-amber)">${detail.accountName || '—'}</td>`;
+                                balTd = detail.accountBalanceAfter != null
+                                    ? `<td style="padding:3px 8px;text-align:right;${isDepleted ? 'color:var(--accent-red)' : ''}">$${formatNumber(Math.round(detail.accountBalanceAfter))}${isDepleted ? ' ⚠' : ''}</td>`
+                                    : `<td style="padding:3px 8px;text-align:right">—</td>`;
+                            } else {
+                                // Smart-order: show actual accounts used from smartWithdrawalLog
+                                const smartAccts = (detail.smartAccounts || []).filter(a => a.netWithdrawn > 0);
+                                if (smartAccts.length > 0) {
+                                    const primary = smartAccts[0];
+                                    const moreBadge = smartAccts.length > 1
+                                        ? ` <span style="font-size:0.72rem;background:var(--bg-tertiary);border-radius:999px;padding:1px 6px">+${smartAccts.length - 1}</span>`
+                                        : '';
+                                    const isDepleted = primary.balanceAfter < 100;
+                                    sourceTd = `<td style="padding:3px 8px;color:var(--text-secondary)">${primary.accountName}${moreBadge}</td>`;
+                                    balTd = `<td style="padding:3px 8px;text-align:right;${isDepleted ? 'color:var(--accent-red)' : ''}">$${formatNumber(Math.round(primary.balanceAfter))}${isDepleted ? ' ⚠' : ''}</td>`;
+                                } else {
+                                    sourceTd = `<td style="padding:3px 8px;color:var(--text-tertiary)">Smart order</td>`;
+                                    balTd = `<td style="padding:3px 8px;text-align:right;color:var(--text-tertiary)">—</td>`;
+                                }
+                            }
+                            return `<tr style="border-bottom:1px solid var(--border-color)">
+                                <td style="padding:3px 8px">${ageNum}</td>
+                                <td style="padding:3px 8px;color:var(--text-secondary)">${calYear}</td>
+                                <td style="padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums">$${formatNumber(Math.round(annualAmt))}</td>
+                                ${sourceTd}${balTd}
+                            </tr>`;
+                        }).filter(r => r).join('');
+
+                    if (rows) {
+                        yearlyTable = `
+                            <details style="margin-top:0.75rem">
+                                <summary style="cursor:pointer;color:var(--accent-amber);font-size:0.82rem;font-weight:600;user-select:none;list-style:none;display:flex;align-items:center;gap:4px">
+                                    <span>▶</span> Year-by-year breakdown
+                                </summary>
+                                <div style="overflow-x:auto;margin-top:0.5rem">
+                                    <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+                                        <thead>
+                                            <tr style="color:var(--text-tertiary);font-size:0.74rem;text-transform:uppercase;letter-spacing:0.03em">
+                                                <th style="padding:3px 8px;text-align:left;font-weight:600">Age</th>
+                                                <th style="padding:3px 8px;text-align:left;font-weight:600">Year</th>
+                                                <th style="padding:3px 8px;text-align:right;font-weight:600">Amount/yr</th>
+                                                <th style="padding:3px 8px;text-align:left;font-weight:600">Source</th>
+                                                <th style="padding:3px 8px;text-align:right;font-weight:600">Bal. After</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${rows}</tbody>
+                                    </table>
+                                </div>
+                            </details>`;
+                    }
+                }
+
                 return `
                     <div class="account-card" style="${!isEnabled ? 'opacity: 0.5; border: 2px dashed var(--border-color);' : ''}">
                         <div class="account-header">
@@ -4985,6 +5312,7 @@
                             <span style="background: var(--bg-tertiary); border-radius: 999px; padding: 2px 10px; font-size: 0.8rem;">${sourceBadge}</span>
                         </div>
                         ${inflNote}
+                        ${yearlyTable}
                     </div>
                 `;
             }).join('');
