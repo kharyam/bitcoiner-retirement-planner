@@ -1002,6 +1002,140 @@
             border-bottom-color: var(--bitcoin-orange);
         }
 
+        /* ── Monte Carlo Styles ─────────────────────────────────────── */
+        .mc-params-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+        .mc-params-panel summary {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            padding: 0.25rem 0;
+        }
+        .mc-params-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .mc-params-grid label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .mc-params-grid label select,
+        .mc-params-grid label input[type="range"] {
+            width: 100%;
+        }
+        .mc-params-grid label select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
+        }
+        .mc-params-grid .btn {
+            align-self: end;
+            grid-column: span 1;
+        }
+        .help-tip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-tertiary);
+            font-size: 0.7rem;
+            cursor: help;
+            flex-shrink: 0;
+        }
+        /* Scenario cards */
+        .mc-scenario-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+        .mc-scenario-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+            text-align: center;
+        }
+        .mc-scenario-card:hover {
+            transform: translateY(-2px);
+        }
+        .mc-scenario-card.active {
+            box-shadow: 0 0 0 2px var(--border-color);
+        }
+        .mc-scenario-card.active-green  { border-color: var(--accent-green);  box-shadow: 0 0 8px rgba(16,185,129,0.3); }
+        .mc-scenario-card.active-amber  { border-color: var(--accent-amber);  box-shadow: 0 0 8px rgba(245,158,11,0.3); }
+        .mc-scenario-card.active-red    { border-color: var(--accent-red);    box-shadow: 0 0 8px rgba(239,68,68,0.3); }
+        .mc-scenario-card .mc-card-icon     { font-size: 1.5rem; margin-bottom: 0.4rem; }
+        .mc-scenario-card .mc-card-title    { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; }
+        .mc-scenario-card .mc-card-pct      { font-size: 2rem; font-weight: 800; font-family: var(--font-mono); line-height: 1; }
+        .mc-scenario-card .mc-card-pct.green  { color: var(--accent-green); }
+        .mc-scenario-card .mc-card-pct.amber  { color: var(--accent-amber); }
+        .mc-scenario-card .mc-card-pct.red    { color: var(--accent-red);   }
+        .mc-scenario-card .mc-card-sublabel { font-size: 0.72rem; color: var(--text-tertiary); margin-top: 0.15rem; margin-bottom: 0.5rem; }
+        .mc-scenario-card .mc-card-median   { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.2rem; text-align: left; }
+        /* Allow dashboard card-content to grow beyond 2000px when simulation tab is active */
+        .card-content.mc-expanded          { max-height: none !important; }
+        /* Fan chart legend */
+        .mc-fan-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 0.75rem;
+        }
+        .mc-legend-item {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-primary);
+        }
+        /* Scenario description */
+        .mc-scenario-description {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-blue);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        /* Empty state */
+        .mc-empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-tertiary);
+        }
+        .mc-empty-state p { margin: 0.25rem 0; }
+        /* Responsive */
+        @media (max-width: 700px) {
+            .mc-params-grid { grid-template-columns: 1fr; }
+            .mc-scenario-cards { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 420px) {
+            .mc-scenario-cards { grid-template-columns: 1fr; }
+        }
+        /* ── End Monte Carlo Styles ─────────────────────────────────── */
+
         /* Status Badge */
         .status-badge {
             display: inline-flex;
@@ -1859,6 +1993,7 @@
                     <button class="chart-tab active" onclick="switchChartTab('overview')">Overview</button>
                     <button class="chart-tab" onclick="switchChartTab('income')">Income</button>
                     <button class="chart-tab" onclick="switchChartTab('allocation')">Allocation</button>
+                    <button class="chart-tab" onclick="switchChartTab('simulation')">Simulation</button>
                 </div>
                 
                 <div id="overviewChart" class="chart-container" style="height: 580px; display: flex; flex-direction: column;">
@@ -1910,6 +2045,111 @@
                     <canvas id="withdrawalChart"></canvas>
                 </div>
                 
+                <div id="simulationChart" class="chart-container hidden" style="height: auto; min-height: 300px; padding: 1rem;">
+
+                    <!-- Params panel -->
+                    <details class="mc-params-panel" open>
+                        <summary>Simulation Parameters</summary>
+                        <div class="mc-params-grid">
+                            <label>Simulations:
+                                <select id="mcNumSims" onchange="state.monteCarlo.params.numSimulations=+this.value">
+                                    <option value="100">100 (fast)</option>
+                                    <option value="250">250</option>
+                                    <option value="500" selected>500</option>
+                                    <option value="1000">1000 (detailed)</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span style="display:flex; align-items:center; gap:0.4rem;">
+                                    Bitcoin/Crypto Volatility: <span id="mcBtcSigmaVal">65%</span>
+                                    <span class="help-icon" style="font-size:0.85rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Bitcoin/Crypto Volatility</div><div class="help-tooltip-text">Controls year-to-year randomness in Bitcoin, MSTR, and FBTC returns. Each simulated year draws a return from a distribution whose width equals this percentage of the expected CAGR. 65% matches Bitcoin's historical volatility. Higher = wider percentile bands.</div></div></span>
+                                </span>
+                                <input type="range" id="mcBtcSigma" min="0.2" max="1.0" step="0.05" value="0.65"
+                                       oninput="state.monteCarlo.params.btcSigmaRatio=+this.value; document.getElementById('mcBtcSigmaVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <label>
+                                <span style="display:flex; align-items:center; gap:0.4rem;">
+                                    Stock Market Volatility: <span id="mcStocksSigmaVal">17%</span>
+                                    <span class="help-icon" style="font-size:0.85rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Stock Market Volatility</div><div class="help-tooltip-text">Annual standard deviation applied to generic stock returns. 17% reflects typical S&P 500 historical volatility. Higher values produce wider simulation bands for equity-heavy portfolios. This is independent of the Bitcoin/Crypto setting above.</div></div></span>
+                                </span>
+                                <input type="range" id="mcStocksSigma" min="0.08" max="0.30" step="0.01" value="0.17"
+                                       oninput="state.monteCarlo.params.stocksSigma=+this.value; document.getElementById('mcStocksSigmaVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <label>Below Average Market — Bitcoin/Crypto CAGR at: <span id="mcMildBearVal">70%</span> of your model
+                                <input type="range" id="mcMildBear" min="0.4" max="0.9" step="0.05" value="0.70"
+                                       oninput="state.monteCarlo.params.mildBearBtcMultiplier=+this.value; document.getElementById('mcMildBearVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <label>Below Average Market — Stocks CAGR at: <span id="mcMildBearStocksVal">80%</span> of your model
+                                <input type="range" id="mcMildBearStocks" min="0.4" max="1.0" step="0.05" value="0.80"
+                                       oninput="state.monteCarlo.params.mildBearStocksMultiplier=+this.value; document.getElementById('mcMildBearStocksVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <label>Significantly Below Market — Bitcoin/Crypto CAGR at: <span id="mcSevereBearVal">40%</span> of your model
+                                <input type="range" id="mcSevereBear" min="0.1" max="0.6" step="0.05" value="0.40"
+                                       oninput="state.monteCarlo.params.severeBearBtcMultiplier=+this.value; document.getElementById('mcSevereBearVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <label>Significantly Below Market — Stocks CAGR at: <span id="mcSevereBearStocksVal">60%</span> of your model
+                                <input type="range" id="mcSevereBearStocks" min="0.2" max="0.9" step="0.05" value="0.60"
+                                       oninput="state.monteCarlo.params.severeBearStocksMultiplier=+this.value; document.getElementById('mcSevereBearStocksVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <label>
+                                <span style="display:flex; align-items:center; gap:0.4rem;">
+                                    Seq. Risk — Crash Depth: <span id="mcCrashVal">70%</span> drawdown yrs 1–3
+                                    <span class="help-icon" style="font-size:0.85rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Sequence of Returns Risk</div><div class="help-tooltip-text">In the Sequence Risk scenario, a severe market crash occurs in the first 3 years after you retire — the most dangerous timing. Returns in those years are reduced to the "crash depth" percentage of normal. This stress-tests whether your portfolio can recover from bad luck right at the start of retirement.</div></div></span>
+                                </span>
+                                <input type="range" id="mcCrash" min="0.2" max="0.85" step="0.05" value="0.70"
+                                       oninput="state.monteCarlo.params.crashSeverity=1-+this.value; document.getElementById('mcCrashVal').textContent=Math.round(+this.value*100)+'%'">
+                            </label>
+                            <button class="btn btn-primary" style="grid-column: span 2;" onclick="runMonteCarlo()" id="mcRunBtn">&#9654; Run Simulation</button>
+                        </div>
+                        <div id="mcProgress" style="display:none; margin-top: 0.75rem;">
+                            <div style="background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; height: 6px;">
+                                <div id="mcProgressBar" style="width:0%; height:6px; background:var(--accent-green); transition:width 0.15s;"></div>
+                            </div>
+                            <span id="mcProgressLabel" style="font-size:0.75rem; color:var(--text-muted); display: block; margin-top: 0.25rem;"></span>
+                        </div>
+                    </details>
+
+                    <!-- Results panel (hidden until first run) -->
+                    <div id="mcResultsPanel" class="hidden" style="margin-top: 1.5rem;">
+
+                        <!-- 4 scenario cards -->
+                        <div class="mc-scenario-cards" id="mcScenarioCards"></div>
+
+                        <!-- Fan chart -->
+                        <div style="position: relative; height: 380px; margin-top: 1.5rem;">
+                            <canvas id="monteCarloFanChart"></canvas>
+                        </div>
+
+                        <!-- Fan chart legend -->
+                        <div class="mc-fan-legend">
+                            <span class="mc-legend-item" style="background: rgba(16,185,129,0.35);">90th–95th %ile</span>
+                            <span class="mc-legend-item" style="background: rgba(16,185,129,0.18);">75th–90th %ile</span>
+                            <span class="mc-legend-item" style="background: rgba(255,255,255,0.9); color: #0f172a; font-weight: 700;">Median</span>
+                            <span class="mc-legend-item" style="background: rgba(245,158,11,0.25);">25th–50th %ile</span>
+                            <span class="mc-legend-item" style="background: rgba(239,68,68,0.25);">5th–25th %ile</span>
+                            <span class="mc-legend-item" style="background: transparent; border: 2px dashed rgba(247,147,26,0.85); color: var(--bitcoin-orange);">Main Projection</span>
+                        </div>
+
+                        <!-- Depletion histogram -->
+                        <div id="mcHistContainer" style="position: relative; height: 200px; margin-top: 1.5rem;">
+                            <canvas id="monteCarloHistChart"></canvas>
+                        </div>
+                        <div id="mcNoDepletion" class="hidden" style="text-align: center; padding: 1.5rem; color: var(--accent-green); font-weight: 600; font-size: 0.95rem;">
+                            ✅ No portfolio depletions in this scenario
+                        </div>
+
+                        <!-- Scenario description -->
+                        <div id="mcScenarioDesc" class="mc-scenario-description"></div>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div id="mcEmptyState" class="mc-empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎲</div>
+                        <p>Configure parameters above and click <strong>Run Simulation</strong> to see probability analysis.</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-tertiary);">500 simulations run in ~200ms using randomized annual returns.</p>
+                    </div>
+                </div>
+
                 <div id="allocationChart" class="chart-container hidden" style="height: auto; min-height: 500px; padding-bottom: 2rem;">
                     <!-- Portfolio Total Display -->
                     <div style="text-align: center; margin-bottom: 2rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px; border: 2px solid var(--bitcoin-orange);">
@@ -2471,7 +2711,21 @@
             allocationYear: 0, // Year to display in allocation pie charts (0 = current)
             chartRange: null, // {startAge, endAge} for overview chart; null = full range
             plannedExpenses: [], // Array of planned expense objects
-            editingExpenseId: null // ID of expense being edited (null = new)
+            editingExpenseId: null, // ID of expense being edited (null = new)
+            monteCarlo: {
+                params: {
+                    numSimulations: 500,
+                    btcSigmaRatio: 0.65,
+                    stocksSigma: 0.17,
+                    mildBearBtcMultiplier: 0.70,
+                    mildBearStocksMultiplier: 0.80,
+                    severeBearBtcMultiplier: 0.40,
+                    severeBearStocksMultiplier: 0.60,
+                    crashSeverity: 0.30,
+                    activeScenario: 'normal'
+                },
+                lastResults: null
+            }
         };
 
         // Asset Colors - distinct palette for easy chart readability
@@ -2524,29 +2778,34 @@
             document.getElementById('currentAge').addEventListener('input', (e) => {
                 state.personalInfo.currentAge = parseInt(e.target.value);
                 updateAllocationSlider(); // Update slider when age changes
-                calculate();
+                calculate(true);
             });
-            
+            document.getElementById('currentAge').addEventListener('blur', () => calculate());
+
             document.getElementById('retirementAge').addEventListener('input', (e) => {
                 state.personalInfo.retirementAge = parseInt(e.target.value);
-                calculate();
+                calculate(true);
             });
-            
+            document.getElementById('retirementAge').addEventListener('blur', () => calculate());
+
             document.getElementById('lifeExpectancy').addEventListener('input', (e) => {
                 state.personalInfo.lifeExpectancy = parseInt(e.target.value);
                 updateAllocationSlider(); // Update slider when life expectancy changes
-                calculate();
+                calculate(true);
             });
-            
+            document.getElementById('lifeExpectancy').addEventListener('blur', () => calculate());
+
             document.getElementById('annualExpenses').addEventListener('input', (e) => {
                 state.personalInfo.annualExpenses = parseFloat(e.target.value);
-                calculate();
+                calculate(true);
             });
-            
+            document.getElementById('annualExpenses').addEventListener('blur', () => calculate());
+
             document.getElementById('inflationRate').addEventListener('input', (e) => {
                 state.personalInfo.inflationRate = parseFloat(e.target.value);
-                calculate();
+                calculate(true);
             });
+            document.getElementById('inflationRate').addEventListener('blur', () => calculate());
             
             document.getElementById('ordinaryTaxRate').addEventListener('input', (e) => {
                 state.personalInfo.ordinaryTaxRate = parseFloat(e.target.value);
@@ -3673,8 +3932,8 @@
         }
 
         // Main Calculation
-        function calculate() {
-            if (!validateState()) return;
+        function calculate(silent = false) {
+            if (!validateState(silent)) return;
             
             // Sync selfCustodyBTC balances — btcAmount is source of truth; balance must reflect current price
             state.accounts.forEach(account => {
@@ -4857,11 +5116,12 @@
         function switchChartTab(tab) {
             document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
-            
+
             document.getElementById('overviewChart').classList.toggle('hidden', tab !== 'overview');
             document.getElementById('incomeChart').classList.toggle('hidden', tab !== 'income');
             document.getElementById('allocationChart').classList.toggle('hidden', tab !== 'allocation');
-            
+            document.getElementById('simulationChart').classList.toggle('hidden', tab !== 'simulation');
+
             // Reset allocation to current year (0) when viewing allocation tab
             if (tab === 'allocation') {
                 const slider = document.getElementById('allocationAgeSlider');
@@ -4869,6 +5129,19 @@
                     slider.value = 0;
                 }
                 window.updateAllocationAge(0); // Reset to year 0 and update everything
+            }
+
+            // Init MC charts on first visit; re-render if results exist
+            if (tab === 'simulation') {
+                fitDashboardCard(true);
+                if (!state.charts.mcFan) {
+                    initMonteCarloCharts();
+                }
+                if (state.monteCarlo.lastResults) {
+                    renderMonteCarloResults();
+                }
+            } else {
+                fitDashboardCard(false);
             }
         }
         
@@ -5703,26 +5976,26 @@
             totalEl.style.color = 'var(--accent-green)';
         }
 
-        function validateState() {
+        function validateState(silent = false) {
             const { currentAge, retirementAge, lifeExpectancy, annualExpenses, inflationRate } = state.personalInfo;
             if (isNaN(currentAge) || currentAge < 0 || currentAge > 120) {
-                showToast('Current age must be 0-120', 'error');
+                if (!silent) showToast('Current age must be 0-120', 'error');
                 return false;
             }
             if (isNaN(retirementAge) || retirementAge <= currentAge || retirementAge > 120) {
-                showToast('Retirement age must be > current age & <=120', 'error');
+                if (!silent) showToast('Retirement age must be > current age & <=120', 'error');
                 return false;
             }
             if (isNaN(lifeExpectancy) || lifeExpectancy <= retirementAge || lifeExpectancy > 120) {
-                showToast('Life expectancy must be > retirement & <=120', 'error');
+                if (!silent) showToast('Life expectancy must be > retirement & <=120', 'error');
                 return false;
             }
             if (annualExpenses <= 0) {
-                showToast('Annual expenses must be > $0', 'error');
+                if (!silent) showToast('Annual expenses must be > $0', 'error');
                 return false;
             }
             if (inflationRate < 0 || inflationRate > 20) {
-                showToast('Inflation rate 0-20%', 'error');
+                if (!silent) showToast('Inflation rate 0-20%', 'error');
                 return false;
             }
             // Check accounts
@@ -6428,8 +6701,10 @@
         // State Management
         function saveState() {
             try {
-                // Exclude charts from saved state (they cause cyclic reference errors)
-                const { charts, ...stateToSave } = state;
+                // Exclude charts and MC lastResults (too large / cyclic)
+                const { charts, monteCarlo, ...stateToSave } = state;
+                // Save MC params but not lastResults
+                stateToSave.monteCarlo = { params: monteCarlo ? monteCarlo.params : state.monteCarlo.params };
                 localStorage.setItem('bitcoinRetirementPlanner', JSON.stringify(stateToSave));
             } catch (e) {
                 console.error('Failed to save state:', e);
@@ -6499,6 +6774,35 @@
                     }
                     if (state.editingExpenseId === undefined) {
                         state.editingExpenseId = null;
+                    }
+
+                    // Ensure monteCarlo exists (backwards compatibility)
+                    if (!state.monteCarlo) {
+                        state.monteCarlo = {
+                            params: {
+                                numSimulations: 500,
+                                btcSigmaRatio: 0.65,
+                                stocksSigma: 0.17,
+                                mildBearBtcMultiplier: 0.70,
+                                mildBearStocksMultiplier: 0.80,
+                                severeBearBtcMultiplier: 0.40,
+                                severeBearStocksMultiplier: 0.60,
+                                crashSeverity: 0.30,
+                                activeScenario: 'normal'
+                            },
+                            lastResults: null
+                        };
+                    } else {
+                        // lastResults is never persisted — reset it
+                        state.monteCarlo.lastResults = null;
+                        // Fill in any new params that may not exist in older saves
+                        const defaultParams = {
+                            numSimulations: 500, btcSigmaRatio: 0.65, stocksSigma: 0.17,
+                            mildBearBtcMultiplier: 0.70, mildBearStocksMultiplier: 0.80,
+                            severeBearBtcMultiplier: 0.40, severeBearStocksMultiplier: 0.60,
+                            crashSeverity: 0.30, activeScenario: 'normal'
+                        };
+                        state.monteCarlo.params = Object.assign({}, defaultParams, state.monteCarlo.params);
                     }
 
                     // Ensure socialSecurity exists (backwards compatibility)
@@ -6877,6 +7181,583 @@
             // Start the random spin cycle after initial 5 second delay
             setTimeout(scheduleNextSpin, 5000);
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MONTE CARLO SIMULATION ENGINE
+        // ═══════════════════════════════════════════════════════════════
+
+        /** Box-Muller transform: N(0,1) variate */
+        function randomNormal() {
+            let u1;
+            do { u1 = Math.random(); } while (u1 === 0);
+            return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * Math.random());
+        }
+
+        /**
+         * Draw a lognormal annual return with Ito correction.
+         * cagr  – expected arithmetic annual return (e.g. 0.32 = 32%)
+         * sigma – annual std dev
+         */
+        function lognormalReturn(cagr, sigma) {
+            const mu = Math.log(1 + cagr);
+            const drift = mu - (sigma * sigma / 2);
+            return Math.exp(drift + randomNormal() * sigma) - 1;
+        }
+
+        /**
+         * Flatten all enabled accounts into a simplified portfolio snapshot
+         * for use by the MC engine (avoids duplicating the full projection logic).
+         */
+        function buildPortfolioSnapshot() {
+            const enabledAccounts = state.accounts.filter(a => a.enabled !== false);
+            const assetTotals = { bitcoin: 0, mstr: 0, fbtc: 0, strc: 0, sata: 0, stocks: 0, cash: 0 };
+            let annualContribution = 0;
+            let maxContribYears = 0;
+
+            enabledAccounts.forEach(acc => {
+                annualContribution += (acc.annualContribution || 0);
+                maxContribYears = Math.max(maxContribYears, acc.contributionYears || 0);
+
+                // currentAllocation stores USD dollar values (not percentages).
+                // Mirror what projectAccountWithWithdrawals does at startup (line ~3295).
+                if (acc.type === 'selfCustodyBTC' && acc.btcAmount > 0) {
+                    // Self-custody: value = btcAmount × live price
+                    assetTotals.bitcoin += acc.btcAmount * state.bitcoinModel.currentPrice;
+                } else {
+                    const holdings = acc.currentAllocation || {};
+                    Object.keys(assetTotals).forEach(asset => {
+                        assetTotals[asset] += holdings[asset] || 0;
+                    });
+                }
+            });
+
+            const totalValue = Object.values(assetTotals).reduce((s, v) => s + v, 0);
+
+            // Convert to weight fractions (0–1)
+            const assetWeights = {};
+            Object.keys(assetTotals).forEach(asset => {
+                assetWeights[asset] = totalValue > 0 ? assetTotals[asset] / totalValue : 0;
+            });
+
+            return { totalValue, assetWeights, annualContribution, maxContribYears };
+        }
+
+        /**
+         * Compute the mean return for a given asset in a given sim year under a scenario.
+         * scenarioBtcMult – multiplier on the user's configured BTC CAGR (1.0 = normal)
+         * scenarioStocksMult – multiplier on the stocks CAGR (1.0 = normal, 0.8 = below avg)
+         */
+        function getMCAssetReturn(asset, simYear, scenarioBtcMult, scenarioStocksMult) {
+            const baseBtcCAGR = getBitcoinCAGRForYear(simYear);
+            const adjBtcCAGR  = baseBtcCAGR * scenarioBtcMult;
+            const leverage    = state.assetPrices.mstr.leverageRatio || 1.8;
+            const expRatio    = (state.assetPrices.fbtc.expenseRatio || 0.25) / 100;
+            const strcYield   = state.assetPrices.strc.dividendYield / 100;
+            const sataYield   = state.assetPrices.sata.dividendYield / 100;
+            const stocksBase  = state.genericStocksCagr / 100;
+            const cashYield   = (state.assetPrices.cash && state.assetPrices.cash.yield) ? state.assetPrices.cash.yield / 100 : 0.03;
+
+            switch (asset) {
+                case 'bitcoin': return adjBtcCAGR;
+                case 'mstr':    return Math.pow(1 + adjBtcCAGR, leverage) - 1;
+                case 'fbtc':    return adjBtcCAGR - expRatio;
+                case 'strc':    return strcYield;
+                case 'sata':    return sataYield;
+                case 'stocks':  return Math.max(0, stocksBase * scenarioStocksMult);
+                case 'cash':    return cashYield;
+                default:        return 0;
+            }
+        }
+
+        /** Volatility (sigma) for each asset class */
+        function getMCAssetSigma(asset, meanReturn, params) {
+            // BTC_SIGMA_FLOOR: even at very low CAGR settings, Bitcoin is historically ~65-80% vol.
+            // Without a floor, sigma collapses near zero when CAGR is set to e.g. 10%.
+            const BTC_SIGMA_FLOOR = 0.30; // 30% minimum annual std dev for BTC-related assets
+            const s = params.btcSigmaRatio * Math.max(BTC_SIGMA_FLOOR, Math.abs(meanReturn));
+            switch (asset) {
+                case 'bitcoin': return s;
+                case 'mstr':    return s * 1.3;
+                case 'fbtc':    return s;
+                case 'strc':    return 0.10;
+                case 'sata':    return 0.10;
+                case 'stocks':  return params.stocksSigma;
+                case 'cash':    return 0;
+                default:        return 0;
+            }
+        }
+
+        /**
+         * Run a single Monte Carlo path.
+         * Returns { yearlyValues: number[], depleted: bool, depletionAge: number|null }
+         */
+        function runOneSim(snapshot, params, scenarioBtcMult, scenarioStocksMult, applySequenceRisk) {
+            const { currentAge, retirementAge, lifeExpectancy, annualExpenses, inflationRate } = state.personalInfo;
+            const ss = state.personalInfo.socialSecurity || {};
+            const inflFactor = 1 + inflationRate / 100;
+            const totalYears = (lifeExpectancy + 10) - currentAge;
+
+            let portfolio = snapshot.totalValue;
+            const yearlyValues = [];
+            let depleted = false;
+            let depletionAge = null;
+
+            for (let y = 0; y < totalYears; y++) {
+                const age = currentAge + y;
+                const simYear = y; // years from now
+
+                // ── 1. Compute blended portfolio return ──────────────────
+                let blendedMean = 0;
+                Object.keys(snapshot.assetWeights).forEach(asset => {
+                    const w = snapshot.assetWeights[asset];
+                    if (w <= 0) return;
+                    let mean = getMCAssetReturn(asset, simYear, scenarioBtcMult, scenarioStocksMult);
+                    // Sequence of returns risk: crush returns in first 3 years after retirement
+                    if (applySequenceRisk && age >= retirementAge && age < retirementAge + 3) {
+                        mean = mean * params.crashSeverity; // very bad year
+                    }
+                    const sigma = getMCAssetSigma(asset, mean, params);
+                    const actualReturn = sigma > 0 ? lognormalReturn(mean, sigma) : mean;
+                    blendedMean += w * actualReturn;
+                });
+
+                // ── 2. Grow portfolio ─────────────────────────────────────
+                portfolio = portfolio * (1 + blendedMean);
+
+                // ── 3. Contributions (pre-retirement, within contrib years) ─
+                // y > 0: match main engine which starts contributions at year 1
+                // y <= maxContribYears: inclusive end (main engine: year <= contributionYears)
+                if (age < retirementAge && y > 0 && y <= snapshot.maxContribYears) {
+                    portfolio += snapshot.annualContribution;
+                }
+
+                // ── 4. Withdrawals (post-retirement) ─────────────────────
+                if (age >= retirementAge) {
+                    const inflMult = Math.pow(inflFactor, simYear);
+                    let withdrawal = annualExpenses * inflMult;
+                    // Subtract Social Security income if applicable
+                    if (ss.enabled && age >= ss.startAge) {
+                        const ssYears = age - ss.startAge;
+                        const ssAnnual = (ss.monthlyBenefit || 0) * 12;
+                        const ssColaFactor = Math.pow(1 + (ss.colaRate || 2.5) / 100, ssYears);
+                        withdrawal = Math.max(0, withdrawal - ssAnnual * ssColaFactor);
+                    }
+                    portfolio -= withdrawal;
+                }
+
+                // ── 5. Clamp & depletion tracking ─────────────────────────
+                if (portfolio < 0) {
+                    portfolio = 0;
+                    if (!depleted) {
+                        depleted = true;
+                        depletionAge = age;
+                    }
+                }
+
+                yearlyValues.push(portfolio);
+            }
+
+            return { yearlyValues, depleted, depletionAge };
+        }
+
+        /** Aggregate N simulation paths into percentile bands per year */
+        function computeScenarioStats(simResults, currentAge, totalYears, retirementAge, lifeExpectancy) {
+            const n = simResults.length;
+            const percs = [5, 10, 25, 50, 75, 90, 95];
+            const bands = {};
+            percs.forEach(p => { bands[p] = []; });
+
+            for (let y = 0; y < totalYears; y++) {
+                const vals = simResults.map(r => r.yearlyValues[y] || 0).sort((a, b) => a - b);
+                percs.forEach(p => {
+                    const idx = Math.min(Math.floor(p / 100 * n), n - 1);
+                    bands[p].push(vals[idx]);
+                });
+            }
+
+            // Success rate: fraction still alive (> 0) at lifeExpectancy
+            const lifeYear = lifeExpectancy - currentAge;
+            const successCount = simResults.filter(r => (r.yearlyValues[lifeYear] || 0) > 0).length;
+            const successRate = successCount / n;
+
+            // Depletion histogram — bucket by 5-year intervals
+            const depletionHist = {};
+            simResults.forEach(r => {
+                if (r.depleted && r.depletionAge !== null) {
+                    const bucket = Math.floor(r.depletionAge / 5) * 5;
+                    depletionHist[bucket] = (depletionHist[bucket] || 0) + 1;
+                }
+            });
+
+            // Key medians
+            const retYear     = Math.max(0, retirementAge - currentAge);
+            const age595Year  = Math.max(0, Math.round(59.5) - currentAge);
+            const medianAtRetirement = bands[50][retYear]  || 0;
+            const medianAt59_5       = bands[50][age595Year] || 0;
+            const medianAtLife       = bands[50][lifeYear]   || 0;
+
+            return { bands, successRate, depletionHist, medianAtRetirement, medianAt59_5, medianAtLife, n };
+        }
+
+        /** Render a scenario card and handle click-to-select */
+        function renderMCScenarioCard(container, scenario, stats, isActive) {
+            const pct = Math.round(stats.successRate * 100);
+            const colorClass = pct >= 80 ? 'green' : pct >= 60 ? 'amber' : 'red';
+            const activeEdge = isActive ? `active active-${colorClass}` : '';
+            const icons = { normal: '📊', mildBear: '📉', severeBear: '💀', sequence: '⚡' };
+            const titles = { normal: 'Normal', mildBear: 'Below Average', severeBear: 'Worst Case', sequence: 'Seq. Risk' };
+
+            const card = document.createElement('div');
+            card.className = `mc-scenario-card ${activeEdge}`;
+            card.dataset.scenario = scenario;
+            const lifeAge = state.personalInfo.lifeExpectancy;
+            card.innerHTML = `
+                <div class="mc-card-icon">${icons[scenario]}</div>
+                <div class="mc-card-title">${titles[scenario]}</div>
+                <div class="mc-card-pct ${colorClass}">${pct}%</div>
+                <div class="mc-card-sublabel">chance of success</div>
+                <div class="mc-card-median">At retirement: $${formatCompact(stats.medianAtRetirement)}</div>
+                <div class="mc-card-median">At age ${lifeAge}: $${formatCompact(stats.medianAtLife)}</div>
+            `;
+            card.addEventListener('click', () => {
+                state.monteCarlo.params.activeScenario = scenario;
+                renderMonteCarloResults();
+            });
+            container.appendChild(card);
+        }
+
+        /** Compact number formatter: $1.2M, $450K */
+        function formatCompact(n) {
+            if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+            return Math.round(n).toString();
+        }
+
+        /** Create Chart.js instances for the MC fan + histogram */
+        function initMonteCarloCharts() {
+            const { currentAge, lifeExpectancy } = state.personalInfo;
+            const totalYears = (lifeExpectancy + 10) - currentAge;
+            const labels = Array.from({ length: totalYears }, (_, i) => currentAge + i);
+
+            const fanCtx = document.getElementById('monteCarloFanChart').getContext('2d');
+            state.charts.mcFan = new Chart(fanCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        // p95 — top of outer green band
+                        { label: 'p95', data: [], borderColor: 'transparent', backgroundColor: 'rgba(16,185,129,0.15)', fill: '+1', pointRadius: 0, tension: 0.4 },
+                        // p90 — top of inner green band
+                        { label: 'p90', data: [], borderColor: 'transparent', backgroundColor: 'rgba(16,185,129,0.22)', fill: '+1', pointRadius: 0, tension: 0.4 },
+                        // p75
+                        { label: 'p75', data: [], borderColor: 'transparent', backgroundColor: 'rgba(245,158,11,0.12)', fill: '+1', pointRadius: 0, tension: 0.4 },
+                        // p50 — median line
+                        { label: 'Median', data: [], borderColor: '#ffffff', backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 0, tension: 0.4 },
+                        // p25
+                        { label: 'p25', data: [], borderColor: 'transparent', backgroundColor: 'rgba(245,158,11,0.18)', fill: '-1', pointRadius: 0, tension: 0.4 },
+                        // p10
+                        { label: 'p10', data: [], borderColor: 'transparent', backgroundColor: 'rgba(239,68,68,0.18)', fill: '-1', pointRadius: 0, tension: 0.4 },
+                        // p5 — bottom of red band
+                        { label: 'p5',  data: [], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0, tension: 0.4 },
+                        // Deterministic reference line from main engine (populated in renderMonteCarloResults)
+                        { label: 'Main Projection (deterministic)', data: [], borderColor: 'rgba(247,147,26,0.85)', borderWidth: 2, borderDash: [8, 4], backgroundColor: 'transparent', fill: false, pointRadius: 0, tension: 0.4, order: 0 },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: ctx => `Age ${ctx[0].label}`,
+                                label: ctx => {
+                                    if (ctx.dataset.label.startsWith('p') || ctx.dataset.label === 'Median') {
+                                        return ` ${ctx.dataset.label}: $${formatCompact(ctx.parsed.y)}`;
+                                    }
+                                    if (ctx.dataset.label === 'Main Projection (deterministic)') {
+                                        return ` Deterministic: $${formatCompact(ctx.parsed.y)}`;
+                                    }
+                                    return null;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Age', color: 'rgba(255,255,255,0.5)' },
+                            ticks: { color: 'rgba(255,255,255,0.5)', maxTicksLimit: 12 },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Portfolio Value (USD)', color: 'rgba(255,255,255,0.5)' },
+                            ticks: {
+                                color: 'rgba(255,255,255,0.5)',
+                                callback: v => '$' + formatCompact(v)
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+
+            // Histogram
+            const histCtx = document.getElementById('monteCarloHistChart').getContext('2d');
+            state.charts.mcHist = new Chart(histCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Simulations depleted', data: [], backgroundColor: [] }] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Age at Depletion', color: 'rgba(255,255,255,0.5)' },
+                            ticks: { color: 'rgba(255,255,255,0.5)' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            title: { display: true, text: '% of Simulations', color: 'rgba(255,255,255,0.5)' },
+                            ticks: {
+                                color: 'rgba(255,255,255,0.5)',
+                                callback: v => v + '%'
+                            },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        /** Update charts and stat cards from lastResults */
+        function renderMonteCarloResults() {
+            const results = state.monteCarlo.lastResults;
+            if (!results) return;
+
+            const active = state.monteCarlo.params.activeScenario;
+            const { currentAge, retirementAge, lifeExpectancy } = state.personalInfo;
+            const totalYears = (lifeExpectancy + 10) - currentAge;
+
+            // Rebuild labels in case age changed since init
+            const labels = Array.from({ length: totalYears }, (_, i) => currentAge + i);
+
+            // ── Scenario cards ──────────────────────────────────────────
+            const cardsContainer = document.getElementById('mcScenarioCards');
+            cardsContainer.innerHTML = '';
+            ['normal', 'mildBear', 'severeBear', 'sequence'].forEach(s => {
+                if (results[s]) {
+                    renderMCScenarioCard(cardsContainer, s, results[s], s === active);
+                }
+            });
+
+            // ── Fan chart data ──────────────────────────────────────────
+            const stats = results[active];
+            if (stats && state.charts.mcFan) {
+                const chart = state.charts.mcFan;
+                chart.data.labels = labels;
+                const percOrder = [95, 90, 75, 50, 25, 10, 5];
+                percOrder.forEach((p, i) => {
+                    chart.data.datasets[i].data = stats.bands[p] || [];
+                });
+
+                // Add retirement age annotation line via dataset (vertical dashed via afterDraw plugin is complex; use annotation label on x-axis)
+                chart.options.plugins.annotation = undefined; // reset any prior
+
+                // Forever Number reference line
+                const { annualExpenses, inflationRate } = state.personalInfo;
+                const yearsToRetirement = retirementAge - currentAge;
+                const inflatedExpenses  = annualExpenses * Math.pow(1 + inflationRate / 100, yearsToRetirement);
+                const foreverMultiplier = 20; // conservative 5% withdrawal
+                const foreverNum = inflatedExpenses * foreverMultiplier;
+
+                // Add the "Forever Number" as a constant line dataset
+                const existingFNDataset = chart.data.datasets.find(d => d.label === 'Forever Number');
+                const fnData = Array(labels.length).fill(foreverNum);
+                if (existingFNDataset) {
+                    existingFNDataset.data = fnData;
+                } else {
+                    chart.data.datasets.push({
+                        label: 'Forever Number',
+                        data: fnData,
+                        borderColor: 'rgba(247,147,26,0.7)',
+                        borderDash: [6, 4],
+                        borderWidth: 1.5,
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0
+                    });
+                }
+
+                // Deterministic reference line from main engine projection
+                const detDataset = chart.data.datasets.find(d => d.label === 'Main Projection (deterministic)');
+                if (detDataset && state.lastProjectionData && state.lastProjectionData.length > 0) {
+                    // Build age → totalValue map from whole-year steps only (skip 0.5 increments)
+                    const detMap = {};
+                    state.lastProjectionData.forEach(d => {
+                        if (d.year % 1 === 0) detMap[d.age] = d.totalValue;
+                    });
+                    detDataset.data = labels.map(age => detMap[age] !== undefined ? detMap[age] : null);
+                }
+
+                chart.update('none');
+            }
+
+            // ── Depletion histogram ────────────────────────────────────
+            if (stats && state.charts.mcHist) {
+                const hasDep = stats.successRate < 1.0;
+                document.getElementById('mcHistContainer').style.display = hasDep ? '' : 'none';
+                document.getElementById('mcNoDepletion').classList.toggle('hidden', hasDep);
+
+                if (hasDep) {
+                    const hist = stats.depletionHist;
+                    const buckets = Object.keys(hist).map(Number).sort((a, b) => a - b);
+                    const total = stats.n;
+                    const histPcts = buckets.map(b => +((hist[b] / total) * 100).toFixed(1));
+                    // Color: earlier depletion = more red
+                    const maxAge = Math.max(...buckets, 80);
+                    const minAge = Math.min(...buckets, currentAge);
+                    const colors = buckets.map(b => {
+                        const t = (b - minAge) / (maxAge - minAge);
+                        const r = Math.round(239 - t * (239 - 16));
+                        const g = Math.round(68  + t * (185 - 68));
+                        const bl = 68;
+                        return `rgba(${r},${g},${bl},0.75)`;
+                    });
+                    const histChart = state.charts.mcHist;
+                    histChart.data.labels = buckets.map(b => `Age ${b}`);
+                    histChart.data.datasets[0].data = histPcts;
+                    histChart.data.datasets[0].backgroundColor = colors;
+                    histChart.update('none');
+                }
+            }
+
+            // ── Scenario description ───────────────────────────────────
+            const descriptions = {
+                normal:
+                    '📊 <strong>Normal</strong>: Returns follow your configured CAGR exactly (with random annual variation). This is your base-case projection — equivalent to "Average Market" in tools like Fidelity.',
+                mildBear:
+                    '📉 <strong>Below Average Market</strong>: Long-run returns modestly below your model — Bitcoin/Crypto at '
+                    + Math.round(state.monteCarlo.params.mildBearBtcMultiplier * 100) + '% and stocks at '
+                    + Math.round(state.monteCarlo.params.mildBearStocksMultiplier * 100)
+                    + '% of your configured CAGR. Models a decade of below-average returns — possible but not the base case.',
+                severeBear:
+                    '💀 <strong>Worst Case / Financial Armageddon</strong>: Extreme multi-decade underperformance — Bitcoin/Crypto at '
+                    + Math.round(state.monteCarlo.params.severeBearBtcMultiplier * 100) + '% and stocks at '
+                    + Math.round(state.monteCarlo.params.severeBearStocksMultiplier * 100)
+                    + '% of your configured CAGR <em>permanently</em>. This models a Japan-style 30-year lost decade combined with a prolonged crypto winter. Most retirement planners do not use this scenario — it is here as a financial armageddon stress test, not a realistic planning assumption.',
+                sequence:
+                    '⚡ <strong>Sequence of Returns Risk</strong>: Normal long-run returns but a severe crash ('
+                    + Math.round((1 - state.monteCarlo.params.crashSeverity) * 100)
+                    + '% drawdown) hits in years 1–3 of retirement — the most dangerous timing for a retiree.'
+            };
+            document.getElementById('mcScenarioDesc').innerHTML = descriptions[active] || '';
+
+            // Show results, hide empty state
+            document.getElementById('mcResultsPanel').classList.remove('hidden');
+            document.getElementById('mcEmptyState').classList.add('hidden');
+
+            // Ensure the dashboard card frame expands to fit all content
+            fitDashboardCard(true);
+        }
+
+        /** Async chunked orchestrator */
+        function runMonteCarlo() {
+            const params = state.monteCarlo.params;
+            const { currentAge, retirementAge, lifeExpectancy } = state.personalInfo;
+            const totalYears = (lifeExpectancy + 10) - currentAge;
+            const N = params.numSimulations;
+            const CHUNK = 50;
+
+            // Disable run button, show progress
+            const runBtn = document.getElementById('mcRunBtn');
+            if (runBtn) { runBtn.disabled = true; runBtn.textContent = '⏳ Running…'; }
+            const progBar   = document.getElementById('mcProgress');
+            const barFill   = document.getElementById('mcProgressBar');
+            const barLabel  = document.getElementById('mcProgressLabel');
+            if (progBar)  progBar.style.display = '';
+            if (barFill)  barFill.style.width = '0%';
+            if (barLabel) barLabel.textContent = '';
+
+            const snapshot = buildPortfolioSnapshot();
+
+            const scenarios = [
+                { key: 'normal',     btcMult: 1.0,                              stocksMult: 1.0,                                    seqRisk: false },
+                { key: 'mildBear',   btcMult: params.mildBearBtcMultiplier,     stocksMult: params.mildBearStocksMultiplier,         seqRisk: false },
+                { key: 'severeBear', btcMult: params.severeBearBtcMultiplier,   stocksMult: params.severeBearStocksMultiplier,       seqRisk: false },
+                { key: 'sequence',   btcMult: 1.0,                              stocksMult: 1.0,                                    seqRisk: true  }
+            ];
+
+            const allResults = {};
+            let scenarioIdx = 0;
+            const totalWork = scenarios.length * N;
+
+            function runChunk() {
+                const sc = scenarios[scenarioIdx];
+                const simResults = allResults[sc.key] || (allResults[sc.key] = []);
+
+                const chunkEnd = Math.min(simResults.length + CHUNK, N);
+                while (simResults.length < chunkEnd) {
+                    simResults.push(runOneSim(snapshot, params, sc.btcMult, sc.stocksMult, sc.seqRisk));
+                }
+                // Progress: scenarios already completed × N + sims done in current scenario
+                const done = scenarios.slice(0, scenarioIdx).length * N + simResults.length;
+                const pct = Math.round((done / totalWork) * 100);
+                if (barFill)  barFill.style.width = pct + '%';
+                if (barLabel) barLabel.textContent = `${sc.key} — ${simResults.length}/${N} sims`;
+
+                if (simResults.length < N) {
+                    // More sims in this scenario
+                    setTimeout(runChunk, 0);
+                } else {
+                    // Compute stats for this scenario
+                    allResults[sc.key] = computeScenarioStats(
+                        simResults, currentAge, totalYears, retirementAge, lifeExpectancy
+                    );
+                    scenarioIdx++;
+                    if (scenarioIdx < scenarios.length) {
+                        setTimeout(runChunk, 0);
+                    } else {
+                        // All done
+                        state.monteCarlo.lastResults = allResults;
+                        if (barFill)  barFill.style.width = '100%';
+                        if (barLabel) barLabel.textContent = 'Complete!';
+                        setTimeout(() => {
+                            if (progBar)  progBar.style.display = 'none';
+                            if (runBtn)   { runBtn.disabled = false; runBtn.textContent = '▶ Run Simulation'; }
+                        }, 600);
+
+                        // Ensure charts are initialized (in case user ran before switching to tab)
+                        if (!state.charts.mcFan) initMonteCarloCharts();
+                        renderMonteCarloResults();
+                    }
+                }
+            }
+
+            setTimeout(runChunk, 0);
+        }
+
+        /**
+         * Let the dashboard card-content grow beyond the CSS max-height ceiling
+         * when the simulation tab is active.  Uses rAF so the DOM has painted
+         * before we measure / remove the constraint.
+         */
+        function fitDashboardCard(expand) {
+            requestAnimationFrame(() => {
+                const content = document.querySelector('#dashboardCard .card-content');
+                if (!content) return;
+                if (expand) {
+                    content.classList.add('mc-expanded');
+                } else {
+                    content.classList.remove('mc-expanded');
+                }
+            });
+        }
+
+        // END MONTE CARLO
+        // ═══════════════════════════════════════════════════════════════
 
         // Initialize on load
         window.addEventListener('DOMContentLoaded', () => {
