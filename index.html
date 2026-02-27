@@ -69,6 +69,10 @@
             --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
         }
 
+        html {
+            font-size: 17px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -1038,7 +1042,7 @@
             margin-bottom: 0.45rem;
         }
         .mc-section-title {
-            font-size: 0.7rem;
+            font-size: 0.77rem;
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
@@ -1046,7 +1050,7 @@
             margin-bottom: 0.45rem;
         }
         .mc-section-hint {
-            font-size: 0.68rem;
+            font-size: 0.74rem;
             color: var(--text-tertiary);
             font-weight: 400;
             text-transform: none;
@@ -1140,7 +1144,7 @@
         .mc-scenario-card .mc-card-pct.green  { color: var(--accent-green); }
         .mc-scenario-card .mc-card-pct.amber  { color: var(--accent-amber); }
         .mc-scenario-card .mc-card-pct.red    { color: var(--accent-red);   }
-        .mc-scenario-card .mc-card-sublabel { font-size: 0.72rem; color: var(--text-tertiary); margin-top: 0.15rem; margin-bottom: 0.5rem; }
+        .mc-scenario-card .mc-card-sublabel { font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.15rem; margin-bottom: 0.5rem; }
         .mc-scenario-card .mc-card-median   { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.2rem; text-align: left; }
         /* Allow dashboard card-content to grow beyond 2000px when simulation tab is active */
         .card-content.mc-expanded          { max-height: none !important; }
@@ -3529,8 +3533,8 @@
                 const ssInfo = state.personalInfo.socialSecurity;
                 if (ssInfo && ssInfo.enabled && ageRounded >= ssInfo.startAge) {
                     const colaRate = (ssInfo.colaRate || 2.5) / 100;
-                    // Benefits grow by COLA from today's dollars each year since currentAge
-                    ssAnnualIncome = ssInfo.monthlyBenefit * 12 * Math.pow(1 + colaRate, ageRounded - currentAge);
+                    // Benefits grow by COLA from claim age (monthlyBenefit is already in claim-age dollars)
+                    ssAnnualIncome = ssInfo.monthlyBenefit * 12 * Math.pow(1 + colaRate, ageRounded - ssInfo.startAge);
                 }
 
                 const netAnnualSpending = Math.max(0, annualSpending - ssAnnualIncome);
@@ -4501,13 +4505,13 @@
                         ctx.fillStyle = '#7c3aed';
                         ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
-                        ctx.fillText('Retirement (Age ' + retirementAge + ')', xPos, top - 5);
+                        ctx.fillText('Retirement (Age ' + retirementAge + ')', xPos, top + 13);
                     }
-                    
+
                     // Draw 59.5 line (when retirement accounts accessible)
                     if (currentAge < age59_5 && x.max >= age59_5) {
                         const xPos = x.getPixelForValue(age59_5);
-                        
+
                         ctx.strokeStyle = '#f59e0b';
                         ctx.lineWidth = 3;
                         ctx.setLineDash([10, 5]);
@@ -4515,14 +4519,14 @@
                         ctx.moveTo(xPos, top);
                         ctx.lineTo(xPos, bottom);
                         ctx.stroke();
-                        
+
                         // Label
                         ctx.fillStyle = '#f59e0b';
                         ctx.font = 'bold 12px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
-                        ctx.fillText('Age 59.5', xPos, top - 5);
+                        ctx.fillText('Age 59.5', xPos, top + 14);
                     }
-                    
+
                     // Draw life expectancy line
                     if (currentAge < lifeExpectancy && x.max >= lifeExpectancy) {
                         const xPos = x.getPixelForValue(lifeExpectancy);
@@ -4539,7 +4543,7 @@
                         ctx.fillStyle = '#ef4444';
                         ctx.font = 'bold 11px ' + getComputedStyle(document.body).fontFamily;
                         ctx.textAlign = 'center';
-                        ctx.fillText('Age ' + state.personalInfo.lifeExpectancy, xPos, top - 5);
+                        ctx.fillText('Age ' + state.personalInfo.lifeExpectancy, xPos, top + 13);
                     }
 
                     // Draw Social Security start age line
@@ -4790,6 +4794,13 @@
                             backgroundColor: 'rgba(251, 191, 36, 0.85)',
                             borderColor: '#fbbf24',
                             borderWidth: 1.5
+                        },
+                        {
+                            label: 'Social Security Income',
+                            data: [],
+                            backgroundColor: 'rgba(52, 211, 153, 0.8)',
+                            borderColor: '#34d399',
+                            borderWidth: 1
                         }
                     ]
                 },
@@ -4804,19 +4815,37 @@
                         tooltip: {
                             mode: 'index',
                             callbacks: {
-                                footer: function(tooltipItems) {
-                                    // Total = sum of regular spending items (indices 0-3, not the planned expense bar index 4)
-                                    let regularTotal = 0;
-                                    let plannedTotal = 0;
-                                    tooltipItems.forEach((item, i) => {
-                                        if (item.dataset.label === 'Planned Expenses') plannedTotal += item.parsed.y;
-                                        else regularTotal += item.parsed.y;
-                                    });
-                                    const grandTotal = regularTotal + plannedTotal;
-                                    if (plannedTotal > 0 && regularTotal > 0) {
-                                        return 'Planned: $' + formatNumber(plannedTotal) + '\nTotal: $' + formatNumber(grandTotal);
+                                label: function(context) {
+                                    const absVal = Math.abs(context.parsed.y);
+                                    if (absVal === 0) return null;
+                                    if (context.dataset.label === 'Social Security Income') {
+                                        return ' SS Income: +$' + formatNumber(absVal);
                                     }
-                                    return 'Total: $' + formatNumber(grandTotal);
+                                    if (context.dataset.label === 'Planned Expenses') {
+                                        return ' Planned Expenses: $' + formatNumber(absVal);
+                                    }
+                                    return ' ' + context.dataset.label + ': $' + formatNumber(absVal);
+                                },
+                                footer: function(tooltipItems) {
+                                    let withdrawalTotal = 0;
+                                    let plannedTotal = 0;
+                                    let ssTotal = 0;
+                                    tooltipItems.forEach((item) => {
+                                        const absVal = Math.abs(item.parsed.y);
+                                        if (item.dataset.label === 'Social Security Income') ssTotal += absVal;
+                                        else if (item.dataset.label === 'Planned Expenses') plannedTotal += absVal;
+                                        else withdrawalTotal += absVal;
+                                    });
+                                    const lines = [];
+                                    if (plannedTotal > 0) lines.push('Planned Expenses: $' + formatNumber(plannedTotal));
+                                    const grandTotal = withdrawalTotal + plannedTotal;
+                                    if (ssTotal > 0) {
+                                        lines.push('Portfolio Withdrawals: $' + formatNumber(grandTotal));
+                                        lines.push('Gross Expenses: $' + formatNumber(grandTotal + ssTotal));
+                                    } else {
+                                        lines.push('Total: $' + formatNumber(grandTotal));
+                                    }
+                                    return lines;
                                 }
                             }
                         }
@@ -4843,12 +4872,13 @@
                         y: {
                             title: {
                                 display: true,
-                                text: 'Net Annual Spending ($)'
+                                text: 'Annual Spending ($)'
                             },
                             stacked: true,
+                            grace: '8%',
                             ticks: {
                                 callback: function(value) {
-                                    return '$' + formatNumber(value);
+                                    return '$' + formatNumber(Math.abs(value));
                                 }
                             }
                         }
@@ -5079,6 +5109,7 @@
                     state.charts.withdrawal.data.datasets[2].data = [];
                     state.charts.withdrawal.data.datasets[3].data = [];
                     state.charts.withdrawal.data.datasets[4].data = [];
+                    state.charts.withdrawal.data.datasets[5].data = [];
                     state.charts.withdrawal.update('none');
                 }
                 
@@ -5223,6 +5254,21 @@
                 const ordinaryIncomeData = [];
                 const plannedExpenseData = [];
 
+                // Social Security income — positive bars (computed directly from personalInfo)
+                const ssInfo = state.personalInfo.socialSecurity || {};
+                const ssIncomeData = [];
+                if (ssInfo.enabled && (ssInfo.monthlyBenefit || 0) > 0) {
+                    const ssStartAge  = ssInfo.startAge || 67;
+                    const ssMonthly   = ssInfo.monthlyBenefit;
+                    const ssColaRate  = (ssInfo.colaRate || 2.5) / 100;
+                    const retAge      = state.personalInfo.retirementAge;
+                    const lifeAge     = state.personalInfo.lifeExpectancy;
+                    for (let age = Math.max(retAge, ssStartAge); age <= lifeAge; age++) {
+                        const years = age - ssStartAge;
+                        ssIncomeData.push({ x: age, y: ssMonthly * 12 * Math.pow(1 + ssColaRate, years) });
+                    }
+                }
+
                 let yearAccumulator = null;
                 let cashAccum = 0;
                 let taxFreeAccum = 0;
@@ -5244,7 +5290,7 @@
                                 taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum });
                                 capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum });
                                 ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum });
-                                plannedExpenseData.push({ x: yearAccumulator, y: plannedExpenseAccum });
+                                plannedExpenseData.push({ x: yearAccumulator, y: -plannedExpenseAccum });
                             }
 
                             // Reset for new age
@@ -5282,7 +5328,7 @@
                     taxFreeData.push({ x: yearAccumulator, y: taxFreeAccum * scale });
                     capitalGainsData.push({ x: yearAccumulator, y: capitalGainsAccum * scale });
                     ordinaryIncomeData.push({ x: yearAccumulator, y: ordinaryIncomeAccum * scale });
-                    plannedExpenseData.push({ x: yearAccumulator, y: plannedExpenseAccum * scale });
+                    plannedExpenseData.push({ x: yearAccumulator, y: -(plannedExpenseAccum * scale) });
                 }
 
                 state.charts.withdrawal.data.datasets[0].data = cashData;
@@ -5290,6 +5336,7 @@
                 state.charts.withdrawal.data.datasets[2].data = capitalGainsData;
                 state.charts.withdrawal.data.datasets[3].data = ordinaryIncomeData;
                 state.charts.withdrawal.data.datasets[4].data = plannedExpenseData;
+                state.charts.withdrawal.data.datasets[5].data = ssIncomeData;
                 state.charts.withdrawal.update('none');
                 
                 // Update allocation charts separately (respects state.allocationYear)
