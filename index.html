@@ -1007,58 +1007,108 @@
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 0.75rem 1rem;
+            padding: 0.9rem 1rem;
         }
-        .mc-params-panel summary {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            user-select: none;
-            padding: 0.25rem 0;
-        }
-        .mc-params-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .mc-params-grid label {
+        /* Top bar: simulations select */
+        .mc-top-bar {
             display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            font-size: 0.85rem;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.7rem;
+        }
+        .mc-top-bar-label {
+            font-size: 0.82rem;
             color: var(--text-secondary);
+            white-space: nowrap;
         }
-        .mc-params-grid label select,
-        .mc-params-grid label input[type="range"] {
-            width: 100%;
+        .mc-top-bar select {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 6px;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.85rem;
         }
-        .mc-params-grid label select {
+        /* Grouped sections */
+        .mc-section {
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            color: var(--text-primary);
-            padding: 0.35rem 0.5rem;
-            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.45rem;
         }
-        .mc-params-grid .btn {
-            align-self: end;
-            grid-column: span 1;
+        .mc-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.45rem;
         }
-        .help-tip {
-            display: inline-flex;
+        .mc-section-hint {
+            font-size: 0.68rem;
+            color: var(--text-tertiary);
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        /* Compact slider rows: label | value | range | reset */
+        .mc-slider-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1.8fr auto;
+            align-items: center;
+            column-gap: 0.6rem;
+            margin-bottom: 0.28rem;
+        }
+        .mc-slider-row:last-child { margin-bottom: 0; }
+        .mc-reset-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
+            font-size: 0.72rem;
             color: var(--text-tertiary);
-            font-size: 0.7rem;
-            cursor: help;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
             flex-shrink: 0;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .mc-reset-btn:hover {
+            color: var(--accent-amber);
+            border-color: var(--accent-amber);
+        }
+        .mc-slider-label {
+            font-size: 0.79rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .mc-slider-val {
+            font-size: 0.79rem;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--accent-amber);
+            min-width: 2.6rem;
+            text-align: right;
+        }
+        /* Bear scenarios side by side */
+        .mc-scenarios-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.45rem;
+            margin-bottom: 0.45rem;
+        }
+        .mc-scenarios-row .mc-section { margin-bottom: 0; }
+        .mc-run-btn { width: 100%; margin-top: 0.7rem; }
+        /* Ensure slider tracks are visible inside the darker mc-section tiles */
+        .mc-params-panel input[type="range"] {
+            background: var(--border-hover);
         }
         /* Scenario cards */
         .mc-scenario-cards {
@@ -1108,6 +1158,18 @@
             font-size: 0.75rem;
             color: var(--text-primary);
         }
+        .mc-legend-toggle {
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s, border-color 0.2s;
+            border: 1px solid transparent;
+        }
+        .mc-legend-toggle:hover { filter: brightness(1.25); }
+        .mc-legend-toggle.band-off {
+            opacity: 0.38;
+            text-decoration: line-through;
+            border-color: rgba(255,255,255,0.25);
+        }
         /* Scenario description */
         .mc-scenario-description {
             margin-top: 1rem;
@@ -1128,7 +1190,7 @@
         .mc-empty-state p { margin: 0.25rem 0; }
         /* Responsive */
         @media (max-width: 700px) {
-            .mc-params-grid { grid-template-columns: 1fr; }
+            .mc-scenarios-row { grid-template-columns: 1fr; }
             .mc-scenario-cards { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 420px) {
@@ -2048,69 +2110,121 @@
                 <div id="simulationChart" class="chart-container hidden" style="height: auto; min-height: 300px; padding: 1rem;">
 
                     <!-- Params panel -->
-                    <details class="mc-params-panel" open>
-                        <summary>Simulation Parameters</summary>
-                        <div class="mc-params-grid">
-                            <label>Simulations:
-                                <select id="mcNumSims" onchange="state.monteCarlo.params.numSimulations=+this.value">
-                                    <option value="100">100 (fast)</option>
-                                    <option value="250">250</option>
-                                    <option value="500" selected>500</option>
-                                    <option value="1000">1000 (detailed)</option>
-                                </select>
-                            </label>
-                            <label>
-                                <span style="display:flex; align-items:center; gap:0.4rem;">
-                                    Bitcoin/Crypto Volatility: <span id="mcBtcSigmaVal">65%</span>
-                                    <span class="help-icon" style="font-size:0.85rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Bitcoin/Crypto Volatility</div><div class="help-tooltip-text">Controls year-to-year randomness in Bitcoin, MSTR, and FBTC returns. Each simulated year draws a return from a distribution whose width equals this percentage of the expected CAGR. 65% matches Bitcoin's historical volatility. Higher = wider percentile bands.</div></div></span>
+                    <div class="mc-params-panel">
+
+                        <!-- Top bar: simulations count -->
+                        <div class="mc-top-bar">
+                            <span class="mc-top-bar-label">Simulations:</span>
+                            <select id="mcNumSims" onchange="state.monteCarlo.params.numSimulations=+this.value">
+                                <option value="100">100 (fast)</option>
+                                <option value="250">250</option>
+                                <option value="500" selected>500</option>
+                                <option value="1000">1000 (detailed)</option>
+                            </select>
+                        </div>
+
+                        <!-- Volatility -->
+                        <div class="mc-section">
+                            <div class="mc-section-title">Volatility <span class="mc-section-hint">— annual std dev used to randomize returns each sim year</span></div>
+                            <div class="mc-slider-row">
+                                <span class="mc-slider-label">Bitcoin &amp; Crypto
+                                    <span class="help-icon" style="font-size:0.8rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Bitcoin/Crypto Volatility</div><div class="help-tooltip-text">Controls year-to-year randomness in Bitcoin, MSTR, and FBTC returns. Each simulated year draws a return from a distribution whose width equals this percentage of the expected CAGR. 65% matches Bitcoin's historical volatility. Higher = wider percentile bands.</div></div></span>
                                 </span>
+                                <span class="mc-slider-val" id="mcBtcSigmaVal">65%</span>
                                 <input type="range" id="mcBtcSigma" min="0.2" max="1.0" step="0.05" value="0.65"
                                        oninput="state.monteCarlo.params.btcSigmaRatio=+this.value; document.getElementById('mcBtcSigmaVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <label>
-                                <span style="display:flex; align-items:center; gap:0.4rem;">
-                                    Stock Market Volatility: <span id="mcStocksSigmaVal">17%</span>
-                                    <span class="help-icon" style="font-size:0.85rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Stock Market Volatility</div><div class="help-tooltip-text">Annual standard deviation applied to generic stock returns. 17% reflects typical S&P 500 historical volatility. Higher values produce wider simulation bands for equity-heavy portfolios. This is independent of the Bitcoin/Crypto setting above.</div></div></span>
+                                <button class="mc-reset-btn" onclick="resetMCSlider('mcBtcSigma','mcBtcSigmaVal','btcSigmaRatio',0.65)" title="Reset to default">↺</button>
+                            </div>
+                            <div class="mc-slider-row">
+                                <span class="mc-slider-label">Stocks
+                                    <span class="help-icon" style="font-size:0.8rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Stock Market Volatility</div><div class="help-tooltip-text">Annual standard deviation applied to generic stock returns. 17% reflects typical S&amp;P 500 historical volatility. Higher values produce wider simulation bands for equity-heavy portfolios. This is independent of the Bitcoin/Crypto setting above.</div></div></span>
                                 </span>
+                                <span class="mc-slider-val" id="mcStocksSigmaVal">17%</span>
                                 <input type="range" id="mcStocksSigma" min="0.08" max="0.30" step="0.01" value="0.17"
                                        oninput="state.monteCarlo.params.stocksSigma=+this.value; document.getElementById('mcStocksSigmaVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <label>Below Average Market — Bitcoin/Crypto CAGR at: <span id="mcMildBearVal">70%</span> of your model
-                                <input type="range" id="mcMildBear" min="0.4" max="0.9" step="0.05" value="0.70"
-                                       oninput="state.monteCarlo.params.mildBearBtcMultiplier=+this.value; document.getElementById('mcMildBearVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <label>Below Average Market — Stocks CAGR at: <span id="mcMildBearStocksVal">80%</span> of your model
-                                <input type="range" id="mcMildBearStocks" min="0.4" max="1.0" step="0.05" value="0.80"
-                                       oninput="state.monteCarlo.params.mildBearStocksMultiplier=+this.value; document.getElementById('mcMildBearStocksVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <label>Significantly Below Market — Bitcoin/Crypto CAGR at: <span id="mcSevereBearVal">40%</span> of your model
-                                <input type="range" id="mcSevereBear" min="0.1" max="0.6" step="0.05" value="0.40"
-                                       oninput="state.monteCarlo.params.severeBearBtcMultiplier=+this.value; document.getElementById('mcSevereBearVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <label>Significantly Below Market — Stocks CAGR at: <span id="mcSevereBearStocksVal">60%</span> of your model
-                                <input type="range" id="mcSevereBearStocks" min="0.2" max="0.9" step="0.05" value="0.60"
-                                       oninput="state.monteCarlo.params.severeBearStocksMultiplier=+this.value; document.getElementById('mcSevereBearStocksVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <label>
-                                <span style="display:flex; align-items:center; gap:0.4rem;">
-                                    Seq. Risk — Crash Depth: <span id="mcCrashVal">70%</span> drawdown yrs 1–3
-                                    <span class="help-icon" style="font-size:0.85rem;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Sequence of Returns Risk</div><div class="help-tooltip-text">In the Sequence Risk scenario, a severe market crash occurs in the first 3 years after you retire — the most dangerous timing. Returns in those years are reduced to the "crash depth" percentage of normal. This stress-tests whether your portfolio can recover from bad luck right at the start of retirement.</div></div></span>
-                                </span>
+                                <button class="mc-reset-btn" onclick="resetMCSlider('mcStocksSigma','mcStocksSigmaVal','stocksSigma',0.17)" title="Reset to default">↺</button>
+                            </div>
+                        </div>
+
+                        <!-- Bear scenario multipliers side by side -->
+                        <div class="mc-scenarios-row">
+
+                            <!-- Below Average -->
+                            <div class="mc-section">
+                                <div class="mc-section-title">📉 Below Average Market <span class="mc-section-hint">— CAGR × multiplier</span></div>
+                                <div class="mc-slider-row">
+                                    <span class="mc-slider-label">Bitcoin/Crypto</span>
+                                    <span class="mc-slider-val" id="mcMildBearVal">70%</span>
+                                    <input type="range" id="mcMildBear" min="0.4" max="0.9" step="0.05" value="0.70"
+                                           oninput="state.monteCarlo.params.mildBearBtcMultiplier=+this.value; document.getElementById('mcMildBearVal').textContent=Math.round(+this.value*100)+'%'">
+                                    <button class="mc-reset-btn" onclick="resetMCSlider('mcMildBear','mcMildBearVal','mildBearBtcMultiplier',0.70)" title="Reset to default">↺</button>
+                                </div>
+                                <div class="mc-slider-row">
+                                    <span class="mc-slider-label">Stocks</span>
+                                    <span class="mc-slider-val" id="mcMildBearStocksVal">80%</span>
+                                    <input type="range" id="mcMildBearStocks" min="0.4" max="1.0" step="0.05" value="0.80"
+                                           oninput="state.monteCarlo.params.mildBearStocksMultiplier=+this.value; document.getElementById('mcMildBearStocksVal').textContent=Math.round(+this.value*100)+'%'">
+                                    <button class="mc-reset-btn" onclick="resetMCSlider('mcMildBearStocks','mcMildBearStocksVal','mildBearStocksMultiplier',0.80)" title="Reset to default">↺</button>
+                                </div>
+                            </div>
+
+                            <!-- Worst Case -->
+                            <div class="mc-section">
+                                <div class="mc-section-title">💀 Worst Case / Armageddon <span class="mc-section-hint">— CAGR × multiplier</span></div>
+                                <div class="mc-slider-row">
+                                    <span class="mc-slider-label">Bitcoin/Crypto</span>
+                                    <span class="mc-slider-val" id="mcSevereBearVal">40%</span>
+                                    <input type="range" id="mcSevereBear" min="0.1" max="0.6" step="0.05" value="0.40"
+                                           oninput="state.monteCarlo.params.severeBearBtcMultiplier=+this.value; document.getElementById('mcSevereBearVal').textContent=Math.round(+this.value*100)+'%'">
+                                    <button class="mc-reset-btn" onclick="resetMCSlider('mcSevereBear','mcSevereBearVal','severeBearBtcMultiplier',0.40)" title="Reset to default">↺</button>
+                                </div>
+                                <div class="mc-slider-row">
+                                    <span class="mc-slider-label">Stocks</span>
+                                    <span class="mc-slider-val" id="mcSevereBearStocksVal">60%</span>
+                                    <input type="range" id="mcSevereBearStocks" min="0.2" max="0.9" step="0.05" value="0.60"
+                                           oninput="state.monteCarlo.params.severeBearStocksMultiplier=+this.value; document.getElementById('mcSevereBearStocksVal').textContent=Math.round(+this.value*100)+'%'">
+                                    <button class="mc-reset-btn" onclick="resetMCSlider('mcSevereBearStocks','mcSevereBearStocksVal','severeBearStocksMultiplier',0.60)" title="Reset to default">↺</button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Sequence of Returns Risk -->
+                        <div class="mc-section">
+                            <div class="mc-section-title">⚡ Sequence of Returns Risk
+                                <span class="help-icon" style="font-size:0.8rem; font-weight:400; text-transform:none; letter-spacing:0;">ⓘ<div class="help-tooltip"><div class="help-tooltip-title">Sequence of Returns Risk</div><div class="help-tooltip-text">In the Sequence Risk scenario, a severe market crash occurs in the first 3 years after you retire — the most dangerous timing. Returns in those years are reduced to the "crash depth" percentage of normal. This stress-tests whether your portfolio can recover from bad luck right at the start of retirement.</div></div></span>
+                            </div>
+                            <div class="mc-slider-row">
+                                <span class="mc-slider-label">Crash depth (yrs 1–3)</span>
+                                <span class="mc-slider-val" id="mcCrashVal">70%</span>
                                 <input type="range" id="mcCrash" min="0.2" max="0.85" step="0.05" value="0.70"
                                        oninput="state.monteCarlo.params.crashSeverity=1-+this.value; document.getElementById('mcCrashVal').textContent=Math.round(+this.value*100)+'%'">
-                            </label>
-                            <button class="btn btn-primary" style="grid-column: span 2;" onclick="runMonteCarlo()" id="mcRunBtn">&#9654; Run Simulation</button>
+                                <button class="mc-reset-btn" onclick="resetMCSlider('mcCrash','mcCrashVal','crashSeverity',0.70,true)" title="Reset to default">↺</button>
+                            </div>
                         </div>
+
+                        <button class="btn btn-primary mc-run-btn" onclick="runMonteCarlo()" id="mcRunBtn">&#9654; Run Simulation</button>
                         <div id="mcProgress" style="display:none; margin-top: 0.75rem;">
                             <div style="background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; height: 6px;">
                                 <div id="mcProgressBar" style="width:0%; height:6px; background:var(--accent-green); transition:width 0.15s;"></div>
                             </div>
                             <span id="mcProgressLabel" style="font-size:0.75rem; color:var(--text-muted); display: block; margin-top: 0.25rem;"></span>
                         </div>
-                    </details>
+                    </div>
 
                     <!-- Results panel (hidden until first run) -->
                     <div id="mcResultsPanel" class="hidden" style="margin-top: 1.5rem;">
+
+                        <!-- Stale data warning -->
+                        <div id="mcStaleBanner" class="hidden" style="
+                            background: rgba(245,158,11,0.12);
+                            border: 1px solid rgba(245,158,11,0.4);
+                            border-radius: 8px;
+                            padding: 0.55rem 0.9rem;
+                            margin-bottom: 1rem;
+                            font-size: 0.82rem;
+                            color: var(--accent-amber);
+                        ">⚠️ Portfolio data changed since this simulation was run — results may be outdated. Click <strong>Run Simulation</strong> to refresh.</div>
 
                         <!-- 4 scenario cards -->
                         <div class="mc-scenario-cards" id="mcScenarioCards"></div>
@@ -2122,8 +2236,8 @@
 
                         <!-- Fan chart legend -->
                         <div class="mc-fan-legend">
-                            <span class="mc-legend-item" style="background: rgba(16,185,129,0.35);">90th–95th %ile</span>
-                            <span class="mc-legend-item" style="background: rgba(16,185,129,0.18);">75th–90th %ile</span>
+                            <span id="mcBand95Toggle" class="mc-legend-item mc-legend-toggle band-off" style="background: rgba(16,185,129,0.35);" onclick="toggleMCUpperBand('95')" title="Click to toggle 90th–95th percentile band">90th–95th %ile</span>
+                            <span id="mcBand90Toggle" class="mc-legend-item mc-legend-toggle band-off" style="background: rgba(16,185,129,0.18);" onclick="toggleMCUpperBand('90')" title="Click to toggle 75th–90th percentile band">75th–90th %ile</span>
                             <span class="mc-legend-item" style="background: rgba(255,255,255,0.9); color: #0f172a; font-weight: 700;">Median</span>
                             <span class="mc-legend-item" style="background: rgba(245,158,11,0.25);">25th–50th %ile</span>
                             <span class="mc-legend-item" style="background: rgba(239,68,68,0.25);">5th–25th %ile</span>
@@ -4879,6 +4993,12 @@
         // Update Charts
         function updateCharts() {
             if (!state.charts.portfolio) return;
+
+            // If MC results exist, mark them stale (but keep them visible — don't clear)
+            if (state.monteCarlo.lastResults) {
+                const staleBanner = document.getElementById('mcStaleBanner');
+                if (staleBanner) staleBanner.classList.remove('hidden');
+            }
             if (state.accounts.length === 0) {
                 // Clear charts if no accounts
                 state.charts.portfolio.data.datasets = [];
@@ -7440,16 +7560,98 @@
             const totalYears = (lifeExpectancy + 10) - currentAge;
             const labels = Array.from({ length: totalYears }, (_, i) => currentAge + i);
 
+            // Plugin: life expectancy line, retirement line, seq-risk crash zone
+            const mcFanPlugin = {
+                id: 'mcFanAnnotations',
+                afterDatasetsDraw(chart) {
+                    const { ctx, chartArea, scales } = chart;
+                    if (!chartArea || !scales.x) return;
+                    const { top, bottom, left, right } = chartArea;
+                    const { x } = scales;
+                    const { currentAge: curAge, retirementAge: retAge, lifeExpectancy: lifeExp } = state.personalInfo;
+                    const active = state.monteCarlo.params.activeScenario;
+                    const font = 'bold 11px sans-serif';
+
+                    // Chart uses a category scale — x.getPixelForValue() takes an index
+                    // (0 = currentAge, 1 = currentAge+1, …), NOT the raw age value.
+                    const toIdx = age => age - curAge;
+                    const totalIdxMax = x.max; // last valid index
+
+                    ctx.save();
+
+                    // ── Sequence risk crash zone (retirementAge → retirementAge+3) ──
+                    if (active === 'sequence') {
+                        const sIdx = toIdx(retAge);
+                        const eIdx = toIdx(retAge + 3);
+                        if (sIdx <= totalIdxMax && eIdx >= 0) {
+                            const xS = Math.max(x.getPixelForValue(Math.max(sIdx, 0)), left);
+                            const xE = Math.min(x.getPixelForValue(Math.min(eIdx, totalIdxMax)), right);
+                            if (xE > xS) {
+                                ctx.fillStyle = 'rgba(239,68,68,0.18)';
+                                ctx.fillRect(xS, top, xE - xS, bottom - top);
+                                ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+                                ctx.lineWidth = 1.5;
+                                ctx.setLineDash([4, 3]);
+                                ctx.strokeRect(xS, top, xE - xS, bottom - top);
+                                ctx.setLineDash([]);
+                                ctx.fillStyle = 'rgba(239,68,68,0.9)';
+                                ctx.font = font;
+                                ctx.textAlign = 'center';
+                                ctx.fillText('⚡ Crash Zone', (xS + xE) / 2, top + 15);
+                            }
+                        }
+                    }
+
+                    // ── Retirement age line ──
+                    const retIdx = toIdx(retAge);
+                    if (retAge > curAge && retIdx >= 0 && retIdx <= totalIdxMax) {
+                        const xPos = x.getPixelForValue(retIdx);
+                        ctx.strokeStyle = 'rgba(124,58,237,0.85)';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(xPos, top);
+                        ctx.lineTo(xPos, bottom);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = 'rgba(124,58,237,0.9)';
+                        ctx.font = font;
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Retire (age ' + retAge + ')', xPos, top - 5);
+                    }
+
+                    // ── Life expectancy line ──
+                    const lifeIdx = toIdx(lifeExp);
+                    if (lifeExp > curAge && lifeIdx >= 0 && lifeIdx <= totalIdxMax) {
+                        const xPos = x.getPixelForValue(lifeIdx);
+                        ctx.strokeStyle = 'rgba(239,68,68,0.85)';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([4, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(xPos, top);
+                        ctx.lineTo(xPos, bottom);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = 'rgba(239,68,68,0.9)';
+                        ctx.font = font;
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Life exp. (age ' + lifeExp + ')', xPos, top - 5);
+                    }
+
+                    ctx.restore();
+                }
+            };
+
             const fanCtx = document.getElementById('monteCarloFanChart').getContext('2d');
             state.charts.mcFan = new Chart(fanCtx, {
                 type: 'line',
                 data: {
                     labels,
                     datasets: [
-                        // p95 — top of outer green band
-                        { label: 'p95', data: [], borderColor: 'transparent', backgroundColor: 'rgba(16,185,129,0.15)', fill: '+1', pointRadius: 0, tension: 0.4 },
-                        // p90 — top of inner green band
-                        { label: 'p90', data: [], borderColor: 'transparent', backgroundColor: 'rgba(16,185,129,0.22)', fill: '+1', pointRadius: 0, tension: 0.4 },
+                        // p95 — top of outer green band (off by default, toggleable via legend)
+                        { label: 'p95', data: [], borderColor: 'transparent', backgroundColor: 'rgba(16,185,129,0.15)', fill: false, pointRadius: 0, tension: 0.4 },
+                        // p90 — top of inner green band (off by default, toggleable via legend)
+                        { label: 'p90', data: [], borderColor: 'transparent', backgroundColor: 'rgba(16,185,129,0.22)', fill: false, pointRadius: 0, tension: 0.4 },
                         // p75
                         { label: 'p75', data: [], borderColor: 'transparent', backgroundColor: 'rgba(245,158,11,0.12)', fill: '+1', pointRadius: 0, tension: 0.4 },
                         // p50 — median line
@@ -7500,7 +7702,8 @@
                             grid: { color: 'rgba(255,255,255,0.05)' }
                         }
                     }
-                }
+                },
+                plugins: [mcFanPlugin]
             });
 
             // Histogram
@@ -7602,6 +7805,7 @@
                     detDataset.data = labels.map(age => detMap[age] !== undefined ? detMap[age] : null);
                 }
 
+                updateMCFanYMax(chart);
                 chart.update('none');
             }
 
@@ -7655,12 +7859,90 @@
             };
             document.getElementById('mcScenarioDesc').innerHTML = descriptions[active] || '';
 
-            // Show results, hide empty state
+            // Show results, hide empty state, clear stale banner
             document.getElementById('mcResultsPanel').classList.remove('hidden');
             document.getElementById('mcEmptyState').classList.add('hidden');
+            const staleBanner = document.getElementById('mcStaleBanner');
+            if (staleBanner) staleBanner.classList.add('hidden');
 
             // Ensure the dashboard card frame expands to fit all content
             fitDashboardCard(true);
+        }
+
+        /** Reset an MC slider to its default value and sync state */
+        function resetMCSlider(inputId, valId, paramKey, defaultVal, invertCrash) {
+            const input = document.getElementById(inputId);
+            const valEl = document.getElementById(valId);
+            if (!input || !valEl) return;
+            input.value = defaultVal;
+            valEl.textContent = Math.round(defaultVal * 100) + '%';
+            state.monteCarlo.params[paramKey] = invertCrash ? (1 - defaultVal) : defaultVal;
+        }
+
+        /** Set fan chart Y-axis max based on which upper bands are currently visible */
+        function updateMCFanYMax(chart) {
+            const ds0 = chart.data.datasets[0]; // p95
+            const ds1 = chart.data.datasets[1]; // p90
+            const ds2 = chart.data.datasets[2]; // p75
+            const band95On = ds0.fill !== false;
+            const band90On = ds1.fill !== false;
+            let topData;
+            if (band95On) {
+                // Both on — remove cap and let Chart.js auto-scale
+                chart.options.scales.y.max = undefined;
+                return;
+            } else if (band90On) {
+                topData = ds1.data; // scale to p90
+            } else {
+                topData = ds2.data; // scale to p75
+            }
+            if (topData && topData.length > 0) {
+                const maxVal = topData.reduce((m, v) => (v != null && isFinite(v) && v > m) ? v : m, 0);
+                chart.options.scales.y.max = maxVal > 0 ? maxVal * 1.12 : undefined;
+            } else {
+                chart.options.scales.y.max = undefined;
+            }
+        }
+
+        /** Toggle upper percentile bands on the fan chart (off by default).
+         *  Bands are coupled: 90-95th can't exist without 75-90th beneath it.
+         *  - Clicking 90-95th: toggles BOTH bands together
+         *  - Clicking 75-90th: turning off also removes 90-95th; turning on only enables 75-90th
+         */
+        function toggleMCUpperBand(band) {
+            const chart = state.charts.mcFan;
+            if (!chart) return;
+            const ds0 = chart.data.datasets[0]; // p95
+            const ds1 = chart.data.datasets[1]; // p90
+            const btn95 = document.getElementById('mcBand95Toggle');
+            const btn90 = document.getElementById('mcBand90Toggle');
+            const band95On = ds0.fill !== false;
+            const band90On = ds1.fill !== false;
+
+            if (band === '95') {
+                // Toggle both together (90-95th needs 75-90th as its base)
+                const newState = !band95On;
+                ds0.fill = newState ? '+1' : false;
+                ds1.fill = newState ? '+1' : false;
+                if (btn95) btn95.classList.toggle('band-off', !newState);
+                if (btn90) btn90.classList.toggle('band-off', !newState);
+            } else {
+                // band === '90'
+                if (band90On) {
+                    // Turning off 75-90th → also remove 90-95th (it has no base)
+                    ds0.fill = false;
+                    ds1.fill = false;
+                    if (btn95) btn95.classList.add('band-off');
+                    if (btn90) btn90.classList.add('band-off');
+                } else {
+                    // Turning on 75-90th only (90-95th stays off until user clicks it)
+                    ds1.fill = '+1';
+                    if (btn90) btn90.classList.remove('band-off');
+                }
+            }
+
+            updateMCFanYMax(chart);
+            chart.update('none');
         }
 
         /** Async chunked orchestrator */
