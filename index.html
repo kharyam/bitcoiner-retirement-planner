@@ -1170,6 +1170,47 @@
             text-decoration: line-through;
             border-color: rgba(255,255,255,0.25);
         }
+        /* BTC-goes-to-zero danger section */
+        .mc-danger-section {
+            border: 1px solid rgba(239,68,68,0.35);
+            background: rgba(239,68,68,0.05);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0;
+        }
+        .mc-danger-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0;
+        }
+        /* Pill toggle switch */
+        .mc-switch {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        .mc-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .mc-switch-track {
+            position: absolute;
+            inset: 0;
+            background: var(--border-hover);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .mc-switch input:checked ~ .mc-switch-track { background: #ef4444; }
+        .mc-switch-track::after {
+            content: '';
+            position: absolute;
+            left: 3px; top: 3px;
+            width: 14px; height: 14px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+        .mc-switch input:checked ~ .mc-switch-track::after { transform: translateX(16px); }
         /* Scenario description */
         .mc-scenario-description {
             margin-top: 1rem;
@@ -2203,6 +2244,32 @@
                             </div>
                         </div>
 
+                        <!-- ☢️ Bitcoin Goes to Zero — extreme stress test -->
+                        <div class="mc-section mc-danger-section">
+                            <div class="mc-danger-toggle-row">
+                                <label class="mc-switch" title="Enable Bitcoin goes to zero scenario">
+                                    <input type="checkbox" id="mcBtcZeroEnabled" onchange="toggleBtcZeroSection(this.checked)">
+                                    <span class="mc-switch-track"></span>
+                                </label>
+                                <span class="mc-section-title" style="margin-bottom:0; color: #ef4444;">
+                                    ☢️ Bitcoin Goes to Zero
+                                    <span class="mc-section-hint" style="color: var(--text-muted);">— stress test only &nbsp;😅 (not a realistic scenario)</span>
+                                </span>
+                            </div>
+                            <div id="mcBtcZeroControls" class="hidden" style="margin-top: 0.65rem;">
+                                <div class="mc-slider-row">
+                                    <span class="mc-slider-label">BTC → $0 at age</span>
+                                    <span class="mc-slider-val" id="mcBtcZeroAgeVal">70</span>
+                                    <input type="range" id="mcBtcZeroAge" min="50" max="95" step="1" value="70"
+                                           oninput="state.monteCarlo.params.btcZeroAge=+this.value; document.getElementById('mcBtcZeroAgeVal').textContent=this.value">
+                                    <button class="mc-reset-btn" onclick="document.getElementById('mcBtcZeroAge').value=70; document.getElementById('mcBtcZeroAgeVal').textContent='70'; state.monteCarlo.params.btcZeroAge=70;" title="Reset to default">↺</button>
+                                </div>
+                                <p style="font-size:0.74rem; color:rgba(239,68,68,0.85); margin:0.4rem 0 0; line-height:1.4;">
+                                    ⚠️ At the selected age, BTC, MSTR, FBTC, STRC &amp; SATA instantly go to $0. Only stocks and cash survive. This models a complete, permanent failure of the Bitcoin network — financial armageddon. Not a realistic retirement planning assumption.
+                                </p>
+                            </div>
+                        </div>
+
                         <button class="btn btn-primary mc-run-btn" onclick="runMonteCarlo()" id="mcRunBtn">&#9654; Run Simulation</button>
                         <div id="mcProgress" style="display:none; margin-top: 0.75rem;">
                             <div style="background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; height: 6px;">
@@ -2836,7 +2903,9 @@
                     severeBearBtcMultiplier: 0.40,
                     severeBearStocksMultiplier: 0.60,
                     crashSeverity: 0.30,
-                    activeScenario: 'normal'
+                    activeScenario: 'normal',
+                    btcZeroEnabled: false,
+                    btcZeroAge: 70
                 },
                 lastResults: null
             }
@@ -6920,7 +6989,8 @@
                             numSimulations: 500, btcSigmaRatio: 0.65, stocksSigma: 0.17,
                             mildBearBtcMultiplier: 0.70, mildBearStocksMultiplier: 0.80,
                             severeBearBtcMultiplier: 0.40, severeBearStocksMultiplier: 0.60,
-                            crashSeverity: 0.30, activeScenario: 'normal'
+                            crashSeverity: 0.30, activeScenario: 'normal',
+                            btcZeroEnabled: false, btcZeroAge: 70
                         };
                         state.monteCarlo.params = Object.assign({}, defaultParams, state.monteCarlo.params);
                     }
@@ -7422,14 +7492,44 @@
             let depleted = false;
             let depletionAge = null;
 
+            // ── BTC-goes-to-zero pre-computation ─────────────────────────
+            const btcZeroEnabled = params.btcZeroEnabled;
+            const btcZeroAge = params.btcZeroAge || 70;
+            const BTC_CORRELATED = new Set(['bitcoin', 'mstr', 'fbtc', 'strc', 'sata']);
+            let survivingWeightTotal = 0;
+            const survivingWeightsNorm = {};
+            if (btcZeroEnabled) {
+                Object.keys(snapshot.assetWeights).forEach(asset => {
+                    if (!BTC_CORRELATED.has(asset) && (snapshot.assetWeights[asset] || 0) > 0) {
+                        survivingWeightTotal += snapshot.assetWeights[asset];
+                    }
+                });
+                if (survivingWeightTotal > 0) {
+                    Object.keys(snapshot.assetWeights).forEach(asset => {
+                        if (!BTC_CORRELATED.has(asset) && (snapshot.assetWeights[asset] || 0) > 0) {
+                            survivingWeightsNorm[asset] = snapshot.assetWeights[asset] / survivingWeightTotal;
+                        }
+                    });
+                }
+            }
+            let btcZeroTriggered = false;
+
             for (let y = 0; y < totalYears; y++) {
                 const age = currentAge + y;
                 const simYear = y; // years from now
 
+                // ── BTC zero event: wipe correlated assets at the trigger age ─
+                if (btcZeroEnabled && !btcZeroTriggered && age >= btcZeroAge) {
+                    btcZeroTriggered = true;
+                    portfolio *= survivingWeightTotal; // only surviving fraction remains
+                }
+
                 // ── 1. Compute blended portfolio return ──────────────────
                 let blendedMean = 0;
-                Object.keys(snapshot.assetWeights).forEach(asset => {
-                    const w = snapshot.assetWeights[asset];
+                // After BTC zeroes out, only compute returns for surviving assets
+                const useWeights = btcZeroTriggered ? survivingWeightsNorm : snapshot.assetWeights;
+                Object.keys(useWeights).forEach(asset => {
+                    const w = useWeights[asset];
                     if (w <= 0) return;
                     let mean = getMCAssetReturn(asset, simYear, scenarioBtcMult, scenarioStocksMult);
                     // Sequence of returns risk: crush returns in first 3 years after retirement
@@ -7870,6 +7970,12 @@
         }
 
         /** Reset an MC slider to its default value and sync state */
+        function toggleBtcZeroSection(enabled) {
+            state.monteCarlo.params.btcZeroEnabled = enabled;
+            const controls = document.getElementById('mcBtcZeroControls');
+            if (controls) controls.classList.toggle('hidden', !enabled);
+        }
+
         function resetMCSlider(inputId, valId, paramKey, defaultVal, invertCrash) {
             const input = document.getElementById(inputId);
             const valEl = document.getElementById(valId);
