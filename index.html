@@ -2318,10 +2318,10 @@
                 
                 <div class="slider-group mb-2">
                     <div class="slider-label">
-                        <span>Cash</span>
+                        <span>Cash (remainder)</span>
                         <span class="slider-value"><span id="cashAllocValue">0</span>%</span>
                     </div>
-                    <input type="range" id="cashAlloc" min="0" max="100" value="0">
+                    <input type="range" id="cashAlloc" min="0" max="100" value="0" disabled>
                 </div>
                 
                 <div class="mt-2" style="text-align: right;">
@@ -3674,6 +3674,8 @@
 
         // Main Calculation
         function calculate() {
+            if (!validateState()) return;
+            
             // Sync selfCustodyBTC balances — btcAmount is source of truth; balance must reflect current price
             state.accounts.forEach(account => {
                 if (account.type === 'selfCustodyBTC' && account.btcAmount > 0) {
@@ -5684,14 +5686,60 @@
         }
 
         function updateTotalAllocation() {
-            const sliders = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'cash'];
-            const total = sliders.reduce((sum, asset) => {
-                return sum + parseInt(document.getElementById(asset + 'Alloc').value);
-            }, 0);
+            const others = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks'];
+            let sumOthers = 0;
+            others.forEach(asset => {
+                const slider = document.getElementById(asset + 'Alloc');
+                if (slider) sumOthers += parseInt(slider.value || 0);
+            });
+            const remainder = Math.max(0, 100 - sumOthers);
+            const cashSlider = document.getElementById('cashAlloc');
+            const cashValueEl = document.getElementById('cashAllocValue');
+            if (cashSlider) cashSlider.value = remainder;
+            if (cashValueEl) cashValueEl.textContent = remainder;
             
             const totalEl = document.getElementById('totalAllocation');
-            totalEl.textContent = total;
-            totalEl.style.color = total === 100 ? 'var(--accent-green)' : 'var(--accent-red)';
+            totalEl.textContent = 100;
+            totalEl.style.color = 'var(--accent-green)';
+        }
+
+        function validateState() {
+            const { currentAge, retirementAge, lifeExpectancy, annualExpenses, inflationRate } = state.personalInfo;
+            if (isNaN(currentAge) || currentAge < 0 || currentAge > 120) {
+                showToast('Current age must be 0-120', 'error');
+                return false;
+            }
+            if (isNaN(retirementAge) || retirementAge <= currentAge || retirementAge > 120) {
+                showToast('Retirement age must be > current age & <=120', 'error');
+                return false;
+            }
+            if (isNaN(lifeExpectancy) || lifeExpectancy <= retirementAge || lifeExpectancy > 120) {
+                showToast('Life expectancy must be > retirement & <=120', 'error');
+                return false;
+            }
+            if (annualExpenses <= 0) {
+                showToast('Annual expenses must be > $0', 'error');
+                return false;
+            }
+            if (inflationRate < 0 || inflationRate > 20) {
+                showToast('Inflation rate 0-20%', 'error');
+                return false;
+            }
+            // Check accounts
+            for (let acc of state.accounts) {
+                if (acc.annualContribution > 0) {
+                    const totalAlloc = Object.values(acc.contributionAllocation).reduce((a,b)=>a+b,0);
+                    if (Math.abs(totalAlloc - 100) > 1) {
+                        showToast(`${acc.name} allocation sum !=100%`, 'error');
+                        return false;
+                    }
+                }
+                if (acc.contributionYears < 0) {
+                    showToast(`${acc.name} contribution years >=0`, 'error');
+                    return false;
+                }
+            }
+            return true;
         }
 
         function getAccountTypeName(type) {
