@@ -2000,6 +2000,25 @@
                     
                     <div class="price-item">
                         <div class="price-label">
+                            <span style="color: #0891b2;">Bonds</span> / Fixed Income
+                            <span class="help-icon">
+                                ⓘ
+                                <div class="help-tooltip">
+                                    <div class="help-tooltip-title">Bonds / Fixed Income CAGR</div>
+                                    <div class="help-tooltip-text">
+                                        Annual growth rate for bond holdings (e.g. aggregate bond index, treasuries). Historically ~4% for US Agg Bond Index.
+                                    </div>
+                                </div>
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <input type="number" class="cagr-input" id="bondsCagr" value="4" step="0.1">
+                            <span class="price-timestamp">Annual growth rate (%)</span>
+                        </div>
+                    </div>
+
+                    <div class="price-item">
+                        <div class="price-label">
                             <span style="color: #22c55e;">Cash</span> / Money Market
                             <span class="help-icon">
                                 ⓘ
@@ -2743,6 +2762,14 @@
                 
                 <div class="slider-group mb-2">
                     <div class="slider-label">
+                        <span>Bonds</span>
+                        <span class="slider-value"><span id="bondsAllocValue">0</span>%</span>
+                    </div>
+                    <input type="range" id="bondsAlloc" min="0" max="100" value="0">
+                </div>
+
+                <div class="slider-group mb-2">
+                    <div class="slider-label">
                         <span>Cash (remainder)</span>
                         <span class="slider-value"><span id="cashAllocValue">0</span>%</span>
                     </div>
@@ -2885,6 +2912,7 @@
                 fbtc: { price: 100000, expenseRatio: 0.25 },
                 strc: { price: 100, dividendYield: 11, parValue: 100 },
                 sata: { price: 95, dividendYield: 12.25, parValue: 95 },
+                bonds: { cagr: 4 },
                 cash: { yield: 3 }
             },
             genericStocksCagr: 10,
@@ -2923,9 +2951,10 @@
             strc: '#4c9aff',      // Blue - STRC
             sata: '#7c3aed',      // Purple - SATA
             stocks: '#10b981',    // Green - Stocks
+            bonds: '#0891b2',     // Teal - Bonds
             cash: '#22c55e'       // Bright green - Cash/Money
         };
-        
+
         // Asset display names
         const ASSET_NAMES = {
             mstr: 'MSTR',
@@ -2934,6 +2963,7 @@
             strc: 'STRC',
             sata: 'SATA',
             stocks: 'Stocks',
+            bonds: 'Bonds',
             cash: 'Cash'
         };
 
@@ -3068,6 +3098,11 @@
                 calculate();
             });
             
+            document.getElementById('bondsCagr').addEventListener('input', (e) => {
+                state.assetPrices.bonds.cagr = parseFloat(e.target.value);
+                calculate();
+            });
+
             document.getElementById('cashYield').addEventListener('input', (e) => {
                 state.assetPrices.cash.yield = parseFloat(e.target.value);
                 calculate();
@@ -3091,7 +3126,7 @@
                     document.getElementById('btcAlloc').disabled = true;
                     
                     // Disable and set other sliders to 0
-                    ['mstr', 'fbtc', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+                    ['mstr', 'fbtc', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                         const slider = document.getElementById(asset + 'Alloc');
                         slider.value = 0;
                         slider.disabled = true;
@@ -3105,7 +3140,7 @@
                     document.getElementById('btcAlloc').closest('.slider-group').style.opacity = '1';
                 } else {
                     // Re-enable all sliders
-                    ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+                    ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                         const slider = document.getElementById(asset + 'Alloc');
                         slider.disabled = false;
                         slider.closest('.slider-group').style.opacity = '1';
@@ -3116,7 +3151,7 @@
             });
             
             // Allocation sliders
-            const allocSliders = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'cash'];
+            const allocSliders = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds', 'cash'];
             allocSliders.forEach(asset => {
                 const slider = document.getElementById(asset + 'Alloc');
                 slider.addEventListener('input', (e) => {
@@ -3394,10 +3429,12 @@
                         assetReturn = Math.min(configuredReturn, maxSataReturn);
                     } else if (asset === 'stocks') {
                         assetReturn = state.genericStocksCagr / 100;
+                    } else if (asset === 'bonds') {
+                        assetReturn = state.assetPrices.bonds.cagr / 100;
                     } else if (asset === 'cash') {
                         assetReturn = state.assetPrices.cash.yield / 100;
                     }
-                    
+
                     accountReturn += assetWeight * assetReturn;
                 });
                 
@@ -3470,10 +3507,14 @@
                     const stocksCagr = state.genericStocksCagr / 100;
                     return initialValue * Math.pow(1 + stocksCagr, years);
                     
+                case 'bonds':
+                    const bondsCagr = state.assetPrices.bonds.cagr / 100;
+                    return initialValue * Math.pow(1 + bondsCagr, years);
+
                 case 'cash':
                     const cashYield = state.assetPrices.cash.yield / 100;
                     return initialValue * Math.pow(1 + cashYield, years);
-                    
+
                 default:
                     return initialValue;
             }
@@ -3492,7 +3533,7 @@
                 const allocation = { ...(acc.contributionAllocation || {}) };
                 
                 // Ensure all assets exist in both
-                ['mstr', 'fbtc', 'bitcoin', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+                ['mstr', 'fbtc', 'bitcoin', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                     if (!(asset in holdings)) holdings[asset] = 0;
                     if (!(asset in allocation)) allocation[asset] = 0;
                 });
@@ -3623,6 +3664,8 @@
                                         annualGrowthRate = Math.min(configuredReturn, maxSataReturn);
                                     } else if (asset === 'stocks') {
                                         annualGrowthRate = state.genericStocksCagr / 100;
+                                    } else if (asset === 'bonds') {
+                                        annualGrowthRate = state.assetPrices.bonds.cagr / 100;
                                     } else if (asset === 'cash') {
                                         annualGrowthRate = state.assetPrices.cash.yield / 100;
                                     } else {
@@ -5166,7 +5209,7 @@
                     
                 } else if (state.overviewViewMode === 'asset') {
                     // View Mode 2: By Asset Type
-                    const assetTypes = ['mstr', 'fbtc', 'bitcoin', 'strc', 'sata', 'stocks', 'cash'];
+                    const assetTypes = ['mstr', 'fbtc', 'bitcoin', 'strc', 'sata', 'stocks', 'bonds', 'cash'];
                     
                     datasets = assetTypes.map(asset => {
                         return {
@@ -5991,7 +6034,7 @@
             document.getElementById('employerMatchLimit').value = '6';
             
             // Reset allocations and ensure all sliders are enabled
-            ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+            ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                 const slider = document.getElementById(asset + 'Alloc');
                 slider.value = '0';
                 slider.disabled = false;
@@ -6007,7 +6050,10 @@
             const account = state.accounts.find(a => a.id === id);
             if (!account) return;
             
-            // Ensure cash exists in allocation
+            // Ensure bonds and cash exist in allocation (backwards compat)
+            if (!account.contributionAllocation.bonds) {
+                account.contributionAllocation.bonds = 0;
+            }
             if (!account.contributionAllocation.cash) {
                 account.contributionAllocation.cash = 0;
             }
@@ -6056,7 +6102,7 @@
                 document.getElementById('btcAlloc').disabled = true;
                 
                 // Set others to 0 and disable
-                ['mstr', 'fbtc', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+                ['mstr', 'fbtc', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                     const slider = document.getElementById(asset + 'Alloc');
                     slider.value = 0;
                     document.getElementById(asset + 'AllocValue').textContent = '0';
@@ -6067,7 +6113,7 @@
                 document.getElementById('btcAlloc').closest('.slider-group').style.opacity = '1';
             } else {
                 // Re-enable all sliders for non-BTC accounts
-                ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+                ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                     const slider = document.getElementById(asset + 'Alloc');
                     slider.disabled = false;
                     slider.closest('.slider-group').style.opacity = '1';
@@ -6093,6 +6139,7 @@
                 strc: parseInt(document.getElementById('strcAlloc').value) || 0,
                 sata: parseInt(document.getElementById('sataAlloc').value) || 0,
                 stocks: parseInt(document.getElementById('stocksAlloc').value) || 0,
+                bonds: parseInt(document.getElementById('bondsAlloc').value) || 0,
                 cash: parseInt(document.getElementById('cashAlloc').value) || 0
             };
             
@@ -6124,7 +6171,7 @@
             }
             
             // Ensure all assets exist in currentAllocation (even if 0)
-            ['mstr', 'fbtc', 'bitcoin', 'strc', 'sata', 'stocks', 'cash'].forEach(asset => {
+            ['mstr', 'fbtc', 'bitcoin', 'strc', 'sata', 'stocks', 'bonds', 'cash'].forEach(asset => {
                 if (!(asset in currentAllocation)) {
                     currentAllocation[asset] = 0;
                 }
@@ -6195,7 +6242,7 @@
         }
 
         function updateTotalAllocation() {
-            const others = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks'];
+            const others = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds'];
             let sumOthers = 0;
             others.forEach(asset => {
                 const slider = document.getElementById(asset + 'Alloc');
@@ -6961,6 +7008,11 @@
                         allocationYear: 0 // Always start at current year
                     };
                     
+                    // Ensure bonds asset exists (for backwards compatibility)
+                    if (!state.assetPrices.bonds) {
+                        state.assetPrices.bonds = { cagr: 4 };
+                    }
+
                     // Ensure cash asset exists (for backwards compatibility)
                     if (!state.assetPrices.cash) {
                         state.assetPrices.cash = { yield: 3 };
@@ -7104,6 +7156,9 @@
             }
             if (document.getElementById('sataYield')) {
                 document.getElementById('sataYield').value = state.assetPrices.sata.dividendYield;
+            }
+            if (document.getElementById('bondsCagr')) {
+                document.getElementById('bondsCagr').value = state.assetPrices.bonds.cagr;
             }
             if (document.getElementById('cashYield')) {
                 document.getElementById('cashYield').value = state.assetPrices.cash.yield;
@@ -7447,7 +7502,7 @@
          */
         function buildPortfolioSnapshot() {
             const enabledAccounts = state.accounts.filter(a => a.enabled !== false);
-            const assetTotals = { bitcoin: 0, mstr: 0, fbtc: 0, strc: 0, sata: 0, stocks: 0, cash: 0 };
+            const assetTotals = { bitcoin: 0, mstr: 0, fbtc: 0, strc: 0, sata: 0, stocks: 0, bonds: 0, cash: 0 };
             let annualContribution = 0;
             let maxContribYears = 0;
 
@@ -7492,6 +7547,7 @@
             const strcYield   = state.assetPrices.strc.dividendYield / 100;
             const sataYield   = state.assetPrices.sata.dividendYield / 100;
             const stocksBase  = state.genericStocksCagr / 100;
+            const bondsCagr   = (state.assetPrices.bonds && state.assetPrices.bonds.cagr) ? state.assetPrices.bonds.cagr / 100 : 0.04;
             const cashYield   = (state.assetPrices.cash && state.assetPrices.cash.yield) ? state.assetPrices.cash.yield / 100 : 0.03;
 
             switch (asset) {
@@ -7501,6 +7557,7 @@
                 case 'strc':    return strcYield;
                 case 'sata':    return sataYield;
                 case 'stocks':  return Math.max(0, stocksBase * scenarioStocksMult);
+                case 'bonds':   return bondsCagr;
                 case 'cash':    return cashYield;
                 default:        return 0;
             }
@@ -7519,6 +7576,7 @@
                 case 'strc':    return 0.10;
                 case 'sata':    return 0.10;
                 case 'stocks':  return params.stocksSigma;
+                case 'bonds':   return 0.05;  // ~5% vol (intermediate bond index)
                 case 'cash':    return 0;
                 default:        return 0;
             }
