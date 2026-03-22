@@ -3152,12 +3152,30 @@
             
             // Allocation sliders
             const allocSliders = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds', 'cash'];
+            const nonCashSliders = ['mstr', 'fbtc', 'btc', 'strc', 'sata', 'stocks', 'bonds'];
             allocSliders.forEach(asset => {
                 const slider = document.getElementById(asset + 'Alloc');
                 slider.addEventListener('input', (e) => {
                     document.getElementById(asset + 'AllocValue').textContent = e.target.value;
                     updateTotalAllocation();
                 });
+                // Snap back to valid range on release
+                if (asset !== 'cash') {
+                    slider.addEventListener('change', (e) => {
+                        const sumExcluding = nonCashSliders
+                            .filter(a => a !== asset)
+                            .reduce((sum, a) => {
+                                const s = document.getElementById(a + 'Alloc');
+                                return sum + (s ? parseInt(s.value || 0) : 0);
+                            }, 0);
+                        const maxAllowed = Math.max(0, 100 - sumExcluding);
+                        if (parseInt(e.target.value) > maxAllowed) {
+                            e.target.value = maxAllowed;
+                            document.getElementById(asset + 'AllocValue').textContent = maxAllowed;
+                            updateTotalAllocation();
+                        }
+                    });
+                }
             });
             
             // Auto-fetch Bitcoin price on load
@@ -6253,10 +6271,15 @@
             const cashValueEl = document.getElementById('cashAllocValue');
             if (cashSlider) cashSlider.value = remainder;
             if (cashValueEl) cashValueEl.textContent = remainder;
-            
+
+            const total = sumOthers + remainder; // remainder=0 when over, so total=sumOthers
             const totalEl = document.getElementById('totalAllocation');
-            totalEl.textContent = 100;
-            totalEl.style.color = 'var(--accent-green)';
+            totalEl.textContent = total;
+            if (total > 100) {
+                totalEl.style.color = 'var(--accent-red)';
+            } else {
+                totalEl.style.color = 'var(--accent-green)';
+            }
         }
 
         function validateState(silent = false) {
